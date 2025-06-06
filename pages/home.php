@@ -2,10 +2,125 @@
 session_start();
 require './db.php';
 
-// Contoh simulasi username, biasanya dari session login asli
-// $_SESSION['username'] = 'AlyaAmanda'; // Uncomment untuk testing login
-
 $username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+
+// Handle cart operations
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$user_id) {
+        header("Location: ./user controller/login.php");
+        exit();
+    }
+
+    // Handle add to cart
+    if (isset($_POST['add_to_cart'])) {
+        $product_id = (int)$_POST['product_id'];
+        $varian_id = isset($_POST['varian_id']) && !empty($_POST['varian_id']) ? (int)$_POST['varian_id'] : null;
+
+        // Cek apakah produk ini memiliki varian
+        $check_has_varian = $conn->prepare("SELECT COUNT(*) FROM tb_varian_product WHERE product_id = ?");
+        $check_has_varian->bind_param("i", $product_id);
+        $check_has_varian->execute();
+        $check_has_varian->bind_result($has_varian);
+        $check_has_varian->fetch();
+        $check_has_varian->close();
+
+        // Jika produk memiliki varian tapi user belum memilih
+        if ($has_varian > 0 && !$varian_id) {
+            $_SESSION['error_message'] = "Silakan pilih varian terlebih dahulu";
+            $_SESSION['product_id_needs_varian'] = $product_id;
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        }
+
+        // Validasi varian_id sesuai dengan product_id
+        if ($varian_id) {
+            $check_varian = $conn->prepare("SELECT id FROM tb_varian_product WHERE id = ? AND product_id = ?");
+            $check_varian->bind_param("ii", $varian_id, $product_id);
+            $check_varian->execute();
+            $check_varian->store_result();
+
+            if ($check_varian->num_rows === 0) {
+                // Varian tidak valid untuk produk ini
+                $varian_id = null;
+            }
+            $check_varian->close();
+        }
+
+        // Cek apakah produk (dengan varian yang sama) sudah ada di keranjang
+        $check_stmt = $conn->prepare("SELECT id, jumlah FROM tb_cart WHERE user_id = ? AND product_id = ? AND varian_id <=> ?");
+        $check_stmt->bind_param("iii", $user_id, $product_id, $varian_id);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+
+        if ($check_result->num_rows > 0) {
+            // Update jumlah jika produk sudah ada
+            $row = $check_result->fetch_assoc();
+            $new_jumlah = $row['jumlah'] + 1;
+            $update_stmt = $conn->prepare("UPDATE tb_cart SET jumlah = ? WHERE id = ?");
+            $update_stmt->bind_param("ii", $new_jumlah, $row['id']);
+            $update_stmt->execute();
+            $update_stmt->close();
+        } else {
+            // Tambahkan produk baru ke keranjang
+            // Ambil foto thumbnail produk
+            $product_stmt = $conn->prepare("SELECT foto_thumbnail FROM tb_adminProduct WHERE id = ?");
+            $product_stmt->bind_param("i", $product_id);
+            $product_stmt->execute();
+            $product_stmt->bind_result($foto_thumbnail);
+            $product_stmt->fetch();
+            $product_stmt->close();
+
+            $insert_stmt = $conn->prepare("INSERT INTO tb_cart (user_id, product_id, varian_id, foto_thumbnail, jumlah) VALUES (?, ?, ?, ?, 1)");
+            $insert_stmt->bind_param("iiis", $user_id, $product_id, $varian_id, $foto_thumbnail);
+            $insert_stmt->execute();
+            $insert_stmt->close();
+        }
+
+        $check_stmt->close();
+    }
+    // Handle update quantity
+    elseif (isset($_POST['update_quantity'])) {
+        $cart_id = (int)$_POST['cart_id'];
+        $action = $_POST['action'];
+
+        // Get current quantity
+        $get_qty = $conn->prepare("SELECT jumlah FROM tb_cart WHERE id = ? AND user_id = ?");
+        $get_qty->bind_param("ii", $cart_id, $user_id);
+        $get_qty->execute();
+        $get_qty->bind_result($current_qty);
+        $get_qty->fetch();
+        $get_qty->close();
+
+        if ($action === 'increase') {
+            $new_qty = $current_qty + 1;
+        } elseif ($action === 'decrease' && $current_qty > 1) {
+            $new_qty = $current_qty - 1;
+        } else {
+            $new_qty = $current_qty;
+        }
+
+        // Update quantity
+        $update_qty = $conn->prepare("UPDATE tb_cart SET jumlah = ? WHERE id = ? AND user_id = ?");
+        $update_qty->bind_param("iii", $new_qty, $cart_id, $user_id);
+        $update_qty->execute();
+        $update_qty->close();
+    }
+    // Handle remove item
+    elseif (isset($_POST['remove_item'])) {
+        $cart_id = (int)$_POST['cart_id'];
+
+        $delete_stmt = $conn->prepare("DELETE FROM tb_cart WHERE id = ? AND user_id = ?");
+        $delete_stmt->bind_param("ii", $cart_id, $user_id);
+        $delete_stmt->execute();
+        $delete_stmt->close();
+    }
+
+    // Set session flag untuk tetap membuka dropdown cart
+    $_SESSION['keep_cart_open'] = true;
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
 
 // Misalnya $username sudah ada di session untuk navbar
 if ($username) {
@@ -15,7 +130,49 @@ if ($username) {
     $stmt->bind_result($email, $nomor_hp);
     $stmt->fetch();
     $stmt->close();
+
+    // Hitung jumlah item di keranjang
+    $cart_count_stmt = $conn->prepare("SELECT SUM(jumlah) FROM tb_cart WHERE user_id = ?");
+    $cart_count_stmt->bind_param("i", $user_id);
+    $cart_count_stmt->execute();
+    $cart_count_stmt->bind_result($cart_count);
+    $cart_count_stmt->fetch();
+    $cart_count_stmt->close();
+
+    // Ambil data keranjang untuk dropdown
+    $cart_items_stmt = $conn->prepare("
+        SELECT c.id, p.nama_produk, 
+               CASE WHEN p.is_diskon = 1 THEN p.harga_diskon ELSE p.harga END as harga,
+               c.jumlah, c.foto_thumbnail, v.varian, p.id as product_id, v.id as varian_id,
+               p.harga as harga_asli, p.is_diskon
+        FROM tb_cart c
+        JOIN tb_adminProduct p ON c.product_id = p.id
+        LEFT JOIN tb_varian_product v ON c.varian_id = v.id
+        WHERE c.user_id = ?
+        LIMIT 5
+    ");
+    $cart_items_stmt->bind_param("i", $user_id);
+    $cart_items_stmt->execute();
+    $cart_items_result = $cart_items_stmt->get_result();
+    $cart_items = [];
+    $total_price = 0;
+
+    while ($item = $cart_items_result->fetch_assoc()) {
+        $cart_items[] = $item;
+        $total_price += $item['harga'] * $item['jumlah'];
+    }
+    $cart_items_stmt->close();
 }
+
+// Reset flag setelah digunakan
+$keep_cart_open = $_SESSION['keep_cart_open'] ?? false;
+unset($_SESSION['keep_cart_open']);
+
+// Ambil pesan error jika ada
+$error_message = $_SESSION['error_message'] ?? null;
+$product_id_needs_varian = $_SESSION['product_id_needs_varian'] ?? null;
+unset($_SESSION['error_message']);
+unset($_SESSION['product_id_needs_varian']);
 ?>
 
 <!DOCTYPE html>
@@ -25,418 +182,241 @@ if ($username) {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Makaroni website</title>
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/navbar.css">
+    <link rel="stylesheet" href="./css/sidebar.css">
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* Container untuk membatasi lebar */
-        .container {
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-            padding-left: 20px;
-            padding-right: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .navbar {
-            background-color: #333;
-            color: white;
-            padding: 10px 0;
-            position: relative;
-            z-index: 1000;
-        }
-
-        .left-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo {
-            font-weight: bold;
-            font-size: 20px;
-        }
-
-        /* Hamburger styling */
-        .hamburger {
-            width: 30px;
-            height: 24px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            z-index: 1100;
-        }
-
-        .hamburger span {
-            background: white;
-            height: 3px;
-            width: 30px;
-            border-radius: 2px;
-            transition: transform 0.4s ease, opacity 0.4s ease;
-            transform-origin: center;
-        }
-
-        /* Saat hamburger aktif jadi silang */
-        .hamburger.active span:nth-child(1) {
-            transform: translateY(10.5px) rotate(45deg);
-        }
-
-        .hamburger.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .hamburger.active span:nth-child(3) {
-            transform: translateY(-10.5px) rotate(-45deg);
-        }
-
-        /* Sidebar */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            height: 100vh;
-            background-color: #333;
-            padding: 20px;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            z-index: 999;
-            color: white;
-        }
-
-        .sidebar.active {
-            transform: translateX(0);
-        }
-
-        .sidebar .close-btn {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 28px;
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-        }
-
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin-top: 50px;
-        }
-
-        .sidebar ul li {
-            margin: 15px 0;
-        }
-
-        .sidebar ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-        }
-
-        /* Search Bar Desktop */
-        .search-bar {
-            max-width: 400px;
-            width: 100%;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 6px 12px;
-            border-radius: 5px;
-            border: none;
-            font-size: 14px;
-        }
-
-        /* Search Icon Mobile */
-        .search-icon {
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            display: none;
-        }
-
-        /* Right Section */
-        .right-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            position: relative;
-            flex-wrap: nowrap;
-        }
-
-        .right-section a {
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-            position: relative;
-            white-space: nowrap;
-        }
-
-        /* Cart Icon with Badge - Diperbesar */
-        .cart-icon {
-            position: relative;
-            display: inline-block;
-            font-size: 24px;
-            /* Ukuran ikon diperbesar */
-        }
-
-        .cart-badge {
-            position: absolute;
-            top: -5px;
-            /* Posisi disesuaikan */
-            right: -5px;
-            /* Posisi disesuaikan */
-            background-color: #ff4757;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Dropdown Cart - Diperbesar */
-        .cart-container {
-            position: relative;
-        }
-
+        /* Tambahan style untuk cart dropdown */
         .cart-dropdown {
             position: absolute;
-            top: 50px;
-            /* Disesuaikan karena ikon lebih besar */
-            right: 10px;
+            right: 0;
+            top: 100%;
+            width: 320px;
             background: white;
-            color: black;
-            width: 400px;
-            max-width: 90vw;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            z-index: 1000;
             display: none;
-            z-index: 1001;
-            font-size: 16px;
-        }
-
-        .cart-dropdown strong {
-            font-size: 18px;
-            display: block;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .cart-dropdown ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 350px;
-            overflow-y: auto;
-        }
-
-        .cart-dropdown ul li {
-            border-bottom: 1px solid #eee;
-            padding: 12px 0;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .cart-dropdown ul li img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-
-        .cart-dropdown ul li .product-info {
-            flex: 1;
-        }
-
-        .cart-dropdown ul li .product-price {
-            font-weight: bold;
-            white-space: nowrap;
-            margin-left: 15px;
-        }
-
-        .cart-dropdown ul li:last-child {
-            border-bottom: none;
-        }
-
-        .cart-dropdown .total-price {
-            font-weight: bold;
-            font-size: 16px;
-            text-align: right;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .cart-dropdown .view-all {
-            display: block;
-            text-align: right;
-            margin-top: 15px;
-            font-size: 14px;
-            color: #0066cc;
-            text-decoration: none;
-        }
-
-        .cart-dropdown .view-all:hover {
-            text-decoration: underline;
         }
 
         .cart-container.show .cart-dropdown {
             display: block;
         }
 
-        /* Search bar Mobile */
-        .search-container-mobile {
-            display: none;
-            background: #f1f1f1;
-            padding: 10px 20px;
-            animation: slideDown 0.4s ease-in-out;
-        }
-
-        .search-container-mobile.show {
-            display: block;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .search-bar {
-                display: none;
-            }
-
-            .search-icon {
-                display: block;
-            }
-
-            .right-section {
-                gap: 10px;
-            }
-
-            .cart-dropdown {
-                width: 320px;
-                max-width: 90vw;
-                right: 5vw;
-                left: auto;
-                margin-left: auto;
-                margin-right: auto;
-                padding: 15px;
-            }
-
-            .cart-dropdown ul li img {
-                width: 40px;
-                height: 40px;
-            }
-        }
-
-        @media (min-width: 769px) {
-            .search-icon {
-                display: none;
-            }
-
-            .search-container-mobile {
-                display: none !important;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <style>
-        .sidebar {
-            width: 250px;
-            background: #333;
-            color: white;
-            padding: 20px;
-            position: fixed;
-            height: 100%;
-            top: 0;
-            left: 0;
+        .cart-dropdown ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+            max-height: 300px;
             overflow-y: auto;
         }
 
-        .sidebar .close-btn {
+        .cart-dropdown li {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-dropdown li img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+
+        .product-info {
+            flex-grow: 1;
+            font-size: 14px;
+        }
+
+        .product-price {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .total-price {
+            font-weight: bold;
+            text-align: right;
+            margin: 10px 0;
+        }
+
+        .view-all {
+            display: block;
+            text-align: center;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .quantity-btn {
+            width: 25px;
+            height: 25px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+        }
+
+        .quantity-input {
+            width: 30px;
+            text-align: center;
+            margin: 0 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        .remove-btn {
+            color: #dc3545;
             background: none;
             border: none;
-            color: white;
-            font-size: 24px;
-            float: right;
             cursor: pointer;
+            margin-left: 5px;
+            font-size: 12px;
         }
 
-        .sidebar ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .sidebar ul li {
-            padding: 10px 0;
-        }
-
-        .sidebar ul li .menu-item {
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
             color: white;
-            text-decoration: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal untuk memilih varian */
+        .varian-modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .varian-modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
         }
 
-        .sidebar ul li .menu-item:hover {
-            text-decoration: underline;
+        .close-modal:hover {
+            color: black;
         }
 
-        .dropdown-content {
-            display: none;
-            padding-left: 20px;
+        /* Style untuk harga diskon */
+        .original-price {
+            text-decoration: line-through;
+            color: #6c757d;
+            font-size: 0.8em;
+            margin-right: 5px;
         }
 
-        .dropdown-content a {
-            display: block;
-            padding: 5px 0;
-            font-size: 14px;
-            color: white;
+        .discounted-price {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .price-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .price-container-navbar {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        /* Style untuk card produk */
+        .product-card {
+            transition: transform 0.2s;
+            height: 100%;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-image-container {
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 5px;
+        }
+
+        .product-link {
             text-decoration: none;
+            color: inherit;
         }
 
-        .dropdown-content a:hover {
-            text-decoration: underline;
-        }
-
-        .show {
-            display: block;
+        .product-link:hover {
+            color: inherit;
         }
     </style>
+    <script src="./js/sidebarDropdown.js"></script>
+</head>
+
+<body>
+    <!-- sidebar -->
+    <?php
+    include 'db.php'; // pastikan koneksi ke database sudah benar
+
+    // Ambil data kategori dari database
+    $query = "SELECT * FROM tb_adminCategory ORDER BY nama_kategori ASC";
+    $result = mysqli_query($conn, $query);
+    ?>
 
     <div class="sidebar" id="sidebar" aria-label="Sidebar navigation">
         <button class="close-btn" onclick="toggleSidebar()" aria-label="Close sidebar">×</button>
@@ -450,9 +430,11 @@ if ($username) {
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
                 <div class="dropdown-content" id="produkDropdown">
-                    <a href="#">Makaroni</a>
-                    <a href="#">Mie Lidi</a>
-                    <a href="#">Basreng</a>
+                    <?php while ($row = mysqli_fetch_assoc($result)) : ?>
+                        <a href="./products/product.php?kategori=<?= urlencode($row['nama_kategori']) ?>">
+                            <?= htmlspecialchars($row['nama_kategori']) ?>
+                        </a>
+                    <?php endwhile; ?>
                 </div>
             </li>
 
@@ -470,30 +452,6 @@ if ($username) {
             </li>
         </ul>
     </div>
-
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            sidebar.style.display = sidebar.style.display === "none" ? "block" : "none";
-        }
-
-        function toggleDropdown(id, element) {
-            const dropdown = document.getElementById(id);
-            dropdown.classList.toggle("show");
-
-            // Toggle icon rotation
-            const icon = element.querySelector("i");
-            icon.classList.toggle("rotate");
-        }
-    </script>
-
-    <style>
-        .rotate {
-            transform: rotate(180deg);
-            transition: transform 0.3s ease;
-        }
-    </style>
-
 
     <!-- Navbar -->
     <nav class="navbar" role="navigation" aria-label="Main navigation">
@@ -525,7 +483,7 @@ if ($username) {
             </div>
 
             <div class="right-section" role="region" aria-label="User and cart menu">
-                <div class="cart-container" id="cartContainer">
+                <div class="cart-container" id="cartContainer" <?= $keep_cart_open ? 'class="show"' : '' ?>>
                     <a
                         href="javascript:void(0);"
                         id="cartToggle"
@@ -534,94 +492,63 @@ if ($username) {
                         tabindex="0">
                         <span class="cart-icon">
                             <i class="bi bi-cart3"></i>
-                            <span class="cart-badge">5</span>
+                            <span class="cart-badge"><?= isset($cart_count) ? $cart_count : 0 ?></span>
                         </span>
                     </a>
-                    <div class="cart-dropdown" id="cartDropdown" role="menu" aria-hidden="true">
-                        <strong>Keranjang (5)</strong>
-                        <ul>
-                            <li>
-                                <img src="https://images.tokopedia.net/img/cache/100-square/VqbcmM/2023/10/13/2d8c73bb-0786-4178-baaa-d40decc9f5a3.jpg" alt="Produk 1" />
-                                <div class="product-info">iPhone 15 Pro Max</div>
-                                <div class="product-price">1 x Rp3.799.000</div>
-                            </li>
-                            <li>
-                                <img src="https://images.tokopedia.net/img/cache/100-square/VqbcmM/2023/10/13/2d8c73bb-0786-4178-baaa-d40decc9f5a3.jpg" alt="Produk 2" />
-                                <div class="product-info">Apple Watch Series 9</div>
-                                <div class="product-price">1 x Rp135.000</div>
-                            </li>
-                            <li>
-                                <img src="https://images.tokopedia.net/img/cache/100-square/VqbcmM/2023/10/13/2d8c73bb-0786-4178-baaa-d40decc9f5a3.jpg" alt="Produk 3" />
-                                <div class="product-info">MacBook Air M2</div>
-                                <div class="product-price">1 x Rp2.985.000</div>
-                            </li>
-                            <li>
-                                <img src="https://images.tokopedia.net/img/cache/100-square/VqbcmM/2023/10/13/2d8c73bb-0786-4178-baaa-d40decc9f5a3.jpg" alt="Produk 4" />
-                                <div class="product-info">AirPods Pro 2</div>
-                                <div class="product-price">1 x Rp98.000</div>
-                            </li>
-                            <li>
-                                <img src="https://images.tokopedia.net/img/cache/100-square/VqbcmM/2023/10/13/2d8c73bb-0786-4178-baaa-d40decc9f5a3.jpg" alt="Produk 5" />
-                                <div class="product-info">iPad Pro 11"</div>
-                                <div class="product-price">1 x Rp2.549.000</div>
-                            </li>
-                        </ul>
-                        <div class="total-price">Total: Rp10.566.000</div>
-                        <a href="#" class="view-all">Lihat semua</a>
+                    <div class="cart-dropdown" id="cartDropdown" role="menu" aria-hidden="<?= $keep_cart_open ? 'false' : 'true' ?>">
+                        <?php if (isset($cart_count) && $cart_count > 0): ?>
+                            <strong>Keranjang (<?= $cart_count ?>)</strong>
+                            <ul>
+                                <?php foreach ($cart_items as $item): ?>
+                                    <li>
+                                        <img src="../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
+                                        <div class="product-info">
+                                            <?= htmlspecialchars($item['nama_produk']) ?>
+                                            <?php if (!empty($item['varian'])): ?>
+                                                <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
+                                            <?php endif; ?>
+                                            <div class="quantity-controls">
+                                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                                    <input type="hidden" name="action" value="decrease">
+                                                    <button type="submit" name="update_quantity" class="quantity-btn">-</button>
+                                                </form>
+                                                <span class="quantity-input"><?= $item['jumlah'] ?></span>
+                                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                                    <input type="hidden" name="action" value="increase">
+                                                    <button type="submit" name="update_quantity" class="quantity-btn">+</button>
+                                                </form>
+                                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                                    <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <div class="product-price">
+                                            <?php if ($item['is_diskon']): ?>
+                                                <div class="price-container-navbar">
+                                                    <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
+                                                    <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
+                                                </div>
+                                            <?php else: ?>
+                                                Rp<?= number_format($item['harga'], 0, ',', '.') ?>
+                                            <?php endif; ?>
+                                        </div>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
+                            <a href="#" class="view-all">Lihat semua</a>
+                        <?php else: ?>
+                            <div class="empty-cart">Keranjang belanja kosong</div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                <style>
-                    .user-dropdown {
-                        position: relative;
-                        display: inline-block;
-                    }
-
-                    .user-dropdown-content {
-                        display: none;
-                        position: absolute;
-                        right: 0;
-                        background-color: #fff;
-                        min-width: 220px;
-                        box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-                        z-index: 1;
-                        border: 1px solid #ccc;
-                        border-radius: 6px;
-                        padding: 10px;
-                    }
-
-                    .user-dropdown:hover .user-dropdown-content {
-                        display: block;
-                    }
-
-                    .user-dropdown-content hr {
-                        margin: 8px 0;
-                        border: 0;
-                        border-top: 1px solid #ccc;
-                    }
-
-                    .user-dropdown-content .menu-item {
-                        padding: 5px 0;
-                        color: #333;
-                        text-decoration: none;
-                        display: block;
-                    }
-
-                    .user-dropdown-content .menu-item:hover {
-                        background-color: #f0f0f0;
-                    }
-
-                    .user-dropdown-content .user-info {
-                        font-size: 14px;
-                        color: #333;
-                    }
-
-                    .user-dropdown-content .user-info span {
-                        display: block;
-                        margin-bottom: 4px;
-                    }
-                </style>
-
+                <!-- dropdown username -->
                 <?php if ($username) : ?>
                     <div class="user-dropdown">
                         <a href="#" aria-label="User profile"><?= htmlspecialchars($username) ?></a>
@@ -637,12 +564,61 @@ if ($username) {
                             <hr>
                             <a href="./logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
                         </div>
+                        <style>
+                            .user-dropdown {
+                                position: relative;
+                                display: inline-block;
+                            }
+
+                            .user-dropdown-content {
+                                display: none;
+                                position: absolute;
+                                right: 0;
+                                background-color: #fff;
+                                min-width: 220px;
+                                box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+                                z-index: 1;
+                                border: 1px solid #ccc;
+                                border-radius: 6px;
+                                padding: 10px;
+                            }
+
+                            .user-dropdown:hover .user-dropdown-content {
+                                display: block;
+                            }
+
+                            .user-dropdown-content hr {
+                                margin: 8px 0;
+                                border: 0;
+                                border-top: 1px solid #ccc;
+                            }
+
+                            .user-dropdown-content .menu-item {
+                                padding: 5px 0;
+                                color: #333;
+                                text-decoration: none;
+                                display: block;
+                            }
+
+                            .user-dropdown-content .menu-item:hover {
+                                background-color: #f0f0f0;
+                            }
+
+                            .user-dropdown-content .user-info {
+                                font-size: 14px;
+                                color: #333;
+                            }
+
+                            .user-dropdown-content .user-info span {
+                                display: block;
+                                margin-bottom: 4px;
+                            }
+                        </style>
                     </div>
                 <?php else : ?>
                     <a href="./user controller/login.php">Login</a>
                     <a href="./user controller/register.php">Register</a>
                 <?php endif; ?>
-
             </div>
         </div>
     </nav>
@@ -652,6 +628,96 @@ if ($username) {
         <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
     </div>
 
+    <div class="row">
+        <?php
+        $sql = "SELECT * FROM tb_adminProduct WHERE stok = 'tersedia'";
+        $result = $conn->query($sql);
+        ?>
+        <?php while ($row = $result->fetch_assoc()): ?>
+            <div class="col-sm-6 col-md-3 mb-4">
+                <div class="card product-card d-flex flex-column rounded h-100"
+                    style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
+                    
+                    <!-- Gambar produk dengan link ke detail produk -->
+                    <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
+                        <div class="product-image-container">
+                            <img src="../admin/uploads/<?= htmlspecialchars($row['foto_thumbnail'] ?? 'default.jpg') ?>"
+                                alt="Produk" class="product-image">
+                        </div>
+                    </a>
+
+                    <!-- Konten produk -->
+                    <div class="card-body d-flex flex-column p-2 flex-grow-1">
+                        <!-- Nama produk dengan link ke detail produk -->
+                        <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
+                            <h6 class="card-title mb-1" style="font-size: 0.95rem;">
+                                <?= htmlspecialchars($row['nama_produk']) ?>
+                            </h6>
+                            <p class="card-text mb-2" style="font-size: 0.85rem;">
+                                <?= htmlspecialchars($row['detail']) ?>
+                            </p>
+                        </a>
+
+                        <!-- Harga produk -->
+                        <div class="mb-2">
+                            <?php if ($row['is_diskon'] && $row['harga_diskon'] > 0): ?>
+                                <div class="price-container">
+                                    <span class="original-price">Rp<?= number_format($row['harga'], 0, ',', '.') ?></span>
+                                    <span class="discounted-price">Rp<?= number_format($row['harga_diskon'], 0, ',', '.') ?></span>
+                                </div>
+                            <?php else: ?>
+                                <span class="text-success" style="font-size: 0.9rem; font-weight: bold;">
+                                    Rp<?= number_format($row['harga'], 0, ',', '.') ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Varian produk -->
+                        <?php
+                        $product_id = $row['id'];
+                        $varianQuery = "SELECT id, varian FROM tb_varian_product WHERE product_id = $product_id AND stok > 0";
+                        $varianResult = $conn->query($varianQuery);
+                        if ($varianResult->num_rows > 0):
+                        ?>
+                            <select class="form-select form-select-sm mb-2 varian-select" data-product-id="<?= $product_id ?>">
+                                <option value="">Pilih varian</option>
+                                <?php while ($v = $varianResult->fetch_assoc()): ?>
+                                    <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['varian']) ?></option>
+                                <?php endwhile; ?>
+                            </select>
+                        <?php endif; ?>
+
+                        <!-- Tombol keranjang -->
+                        <div class="mt-auto d-grid gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary add-to-cart-btn"
+                                data-product-id="<?= $product_id ?>"
+                                <?= $varianResult->num_rows > 0 ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>>
+                                <i class="bi bi-cart-plus"></i> Keranjang
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal untuk memilih varian -->
+            <div id="varianModal" class="varian-modal">
+                <div class="varian-modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h5>Pilih Varian</h5>
+                    <p id="modalErrorMessage" class="text-danger"></p>
+                    <form id="varianForm" method="POST">
+                        <input type="hidden" name="product_id" id="modalProductId">
+                        <div class="mb-3">
+                            <select class="form-select" name="varian_id" id="modalVarianSelect" required>
+                                <option value="">Pilih varian</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="add_to_cart" class="btn btn-primary">Tambahkan ke Keranjang</button>
+                    </form>
+                </div>
+            </div>
+        <?php endwhile; ?>
+    </div>
+
     <script>
         const hamburger = document.getElementById("hamburger");
         const sidebar = document.getElementById("sidebar");
@@ -659,6 +725,27 @@ if ($username) {
         const cartDropdown = document.getElementById("cartDropdown");
         const searchIcon = document.getElementById("searchIcon");
         const mobileSearch = document.getElementById("mobileSearch");
+        const varianModal = document.getElementById("varianModal");
+        const modalVarianSelect = document.getElementById("modalVarianSelect");
+        const modalProductId = document.getElementById("modalProductId");
+        const modalErrorMessage = document.getElementById("modalErrorMessage");
+        const varianForm = document.getElementById("varianForm");
+        const closeModal = document.querySelector(".close-modal");
+
+        // Set cart dropdown tetap terbuka jika ada flag
+        <?php if ($keep_cart_open): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                cartContainer.classList.add("show");
+                cartDropdown.setAttribute("aria-hidden", "false");
+            });
+        <?php endif; ?>
+
+        // Tampilkan modal varian jika ada error
+        <?php if ($error_message && $product_id_needs_varian): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                showVarianModal(<?= $product_id_needs_varian ?>, "<?= $error_message ?>");
+            });
+        <?php endif; ?>
 
         function toggleSidebar() {
             sidebar.classList.toggle("active");
@@ -694,6 +781,11 @@ if ($username) {
 
         // Klik di luar dropdown untuk menutup
         document.addEventListener("click", (e) => {
+            // Jangan tutup jika klik berasal dari form dalam cart
+            if (e.target.closest('form') && e.target.closest('form').method === 'post') {
+                return;
+            }
+
             if (!cartContainer.contains(e.target) && cartContainer.classList.contains("show")) {
                 cartContainer.classList.remove("show");
                 cartDropdown.setAttribute("aria-hidden", "true");
@@ -709,6 +801,128 @@ if ($username) {
                 e.preventDefault();
                 mobileSearch.classList.toggle("show");
             }
+        });
+
+        // Handle form submission untuk mencegah event bubbling
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.stopPropagation();
+            });
+        });
+
+        // Fungsi untuk menampilkan modal varian
+        function showVarianModal(productId, errorMessage = null) {
+            modalProductId.value = productId;
+            modalErrorMessage.textContent = errorMessage || '';
+
+            // Kosongkan select terlebih dahulu
+            modalVarianSelect.innerHTML = '<option value="">Pilih varian</option>';
+
+            // Ambil varian dari select yang sesuai dengan productId
+            const originalSelect = document.querySelector(`.varian-select[data-product-id="${productId}"]`);
+            if (originalSelect) {
+                // Clone semua option dari select asli ke modal select
+                const options = originalSelect.querySelectorAll('option');
+                options.forEach(option => {
+                    if (option.value) { // Skip option pertama yang kosong
+                        const newOption = document.createElement('option');
+                        newOption.value = option.value;
+                        newOption.textContent = option.textContent;
+                        modalVarianSelect.appendChild(newOption);
+                    }
+                });
+            }
+
+            varianModal.style.display = "block";
+        }
+
+        // Fungsi untuk menutup modal
+        function closeVarianModal() {
+            varianModal.style.display = "none";
+        }
+
+        // Event listener untuk tombol close modal
+        closeModal.addEventListener("click", closeVarianModal);
+
+        // Tutup modal ketika klik di luar modal
+        window.addEventListener("click", (e) => {
+            if (e.target === varianModal) {
+                closeVarianModal();
+            }
+        });
+
+        // Handle submit form varian
+        varianForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            if (!modalVarianSelect.value) {
+                modalErrorMessage.textContent = "Silakan pilih varian terlebih dahulu";
+                return;
+            }
+            this.submit();
+        });
+
+        // Handle klik tombol add to cart
+        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                const hasVarian = this.getAttribute('data-has-varian') === 'true';
+
+                if (hasVarian) {
+                    // Cek apakah varian sudah dipilih
+                    const varianSelect = document.querySelector(`.varian-select[data-product-id="${productId}"]`);
+                    if (!varianSelect || !varianSelect.value) {
+                        // Tampilkan modal untuk memilih varian
+                        showVarianModal(productId, "Silakan pilih varian terlebih dahulu");
+                        return;
+                    }
+
+                    // Jika varian sudah dipilih, submit form
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '';
+
+                    const productIdInput = document.createElement('input');
+                    productIdInput.type = 'hidden';
+                    productIdInput.name = 'product_id';
+                    productIdInput.value = productId;
+                    form.appendChild(productIdInput);
+
+                    const varianIdInput = document.createElement('input');
+                    varianIdInput.type = 'hidden';
+                    varianIdInput.name = 'varian_id';
+                    varianIdInput.value = varianSelect.value;
+                    form.appendChild(varianIdInput);
+
+                    const addToCartInput = document.createElement('input');
+                    addToCartInput.type = 'hidden';
+                    addToCartInput.name = 'add_to_cart';
+                    addToCartInput.value = '1';
+                    form.appendChild(addToCartInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                } else {
+                    // Jika produk tidak memiliki varian, langsung submit
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '';
+
+                    const productIdInput = document.createElement('input');
+                    productIdInput.type = 'hidden';
+                    productIdInput.name = 'product_id';
+                    productIdInput.value = productId;
+                    form.appendChild(productIdInput);
+
+                    const addToCartInput = document.createElement('input');
+                    addToCartInput.type = 'hidden';
+                    addToCartInput.name = 'add_to_cart';
+                    addToCartInput.value = '1';
+                    form.appendChild(addToCartInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
         });
     </script>
 </body>

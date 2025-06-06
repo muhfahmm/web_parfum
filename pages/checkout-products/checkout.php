@@ -5,15 +5,7 @@ require '../db.php';
 $username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
 $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 
-// Get product ID from URL
-$product_id = isset($_GET['id']) ? (int)$_GET['id'] : null;
-
-if (!$product_id) {
-    header("Location: ../index.php");
-    exit();
-}
-
-// Handle cart operations (same as before)
+// Handle cart operations
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$user_id) {
         header("Location: ./user controller/login.php");
@@ -37,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($has_varian > 0 && !$varian_id) {
             $_SESSION['error_message'] = "Silakan pilih varian terlebih dahulu";
             $_SESSION['product_id_needs_varian'] = $product_id;
-            header("Location: " . $_SERVER['PHP_SELF'] . "?id=$product_id");
+            header("Location: " . $_SERVER['PHP_SELF']);
             exit();
         }
 
@@ -126,11 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Set session flag untuk tetap membuka dropdown cart
     $_SESSION['keep_cart_open'] = true;
-    header("Location: " . $_SERVER['PHP_SELF'] . "?id=$product_id");
+    header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
 
-// Get user info if logged in (same as before)
+// Misalnya $username sudah ada di session untuk navbar
 if ($username) {
     $stmt = $conn->prepare("SELECT email, nomor_hp FROM tb_userLogin WHERE username = ?");
     $stmt->bind_param("s", $username);
@@ -181,30 +173,6 @@ $error_message = $_SESSION['error_message'] ?? null;
 $product_id_needs_varian = $_SESSION['product_id_needs_varian'] ?? null;
 unset($_SESSION['error_message']);
 unset($_SESSION['product_id_needs_varian']);
-
-// Get product details
-$product_stmt = $conn->prepare("SELECT * FROM tb_adminProduct WHERE id = ? AND stok = 'tersedia'");
-$product_stmt->bind_param("i", $product_id);
-$product_stmt->execute();
-$product_result = $product_stmt->get_result();
-$product = $product_result->fetch_assoc();
-$product_stmt->close();
-
-if (!$product) {
-    header("Location: ../index.php");
-    exit();
-}
-
-// Get product variants
-$varian_stmt = $conn->prepare("SELECT id, varian FROM tb_varian_product WHERE product_id = ? AND stok > 0");
-$varian_stmt->bind_param("i", $product_id);
-$varian_stmt->execute();
-$varian_result = $varian_stmt->get_result();
-$variants = [];
-while ($variant = $varian_result->fetch_assoc()) {
-    $variants[] = $variant;
-}
-$varian_stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -213,21 +181,14 @@ $varian_stmt->close();
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?= htmlspecialchars($product['nama_produk']) ?> - Makaroni website</title>
+    <title>Makaroni website</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/sidebar.css">
     <style>
-        .price-container-navbar {
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-            font-size: 12px;
-            /* Tambahkan ini untuk memperkecil ukuran container harga */
-        }
-
+        /* Tambahan style untuk cart dropdown */
         .cart-dropdown {
             position: absolute;
             right: 0;
@@ -275,8 +236,8 @@ $varian_stmt->close();
         }
 
         .product-price {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            font-weight: bold;
+            font-size: 14px;
         }
 
         .total-price {
@@ -390,15 +351,13 @@ $varian_stmt->close();
         .original-price {
             text-decoration: line-through;
             color: #6c757d;
-            font-size: 0.9em;
+            font-size: 0.8em;
             margin-right: 5px;
-
         }
 
         .discounted-price {
             color: #dc3545;
             font-weight: bold;
-            font-size: 1em;
         }
 
         .price-container {
@@ -411,75 +370,6 @@ $varian_stmt->close();
             align-items: center;
             flex-direction: column;
         }
-
-        /* Style untuk card produk */
-        .product-card {
-            transition: transform 0.2s;
-            height: 100%;
-        }
-
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .product-image-container {
-            aspect-ratio: 4/3;
-            overflow: hidden;
-            border-top-left-radius: 1rem;
-            border-top-right-radius: 1rem;
-        }
-
-        .product-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            padding: 5px;
-        }
-
-        .product-link {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .product-link:hover {
-            color: inherit;
-        }
-
-        /* Additional styles for product detail page */
-        .product-detail-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .product-image {
-            max-height: 400px;
-            object-fit: contain;
-            width: 100%;
-        }
-
-        .product-title {
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-        }
-
-
-
-        .product-description {
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-        }
-
-        .variant-select {
-            margin-bottom: 1.5rem;
-        }
-
-        .add-to-cart-btn {
-            width: 100%;
-            padding: 10px;
-            font-size: 1.1rem;
-        }
     </style>
     <script src="./js/sidebarDropdown.js"></script>
 </head>
@@ -487,6 +377,7 @@ $varian_stmt->close();
 <body>
     <!-- sidebar -->
     <?php
+
     // Ambil data kategori dari database
     $query = "SELECT * FROM tb_adminCategory ORDER BY nama_kategori ASC";
     $result = mysqli_query($conn, $query);
@@ -527,7 +418,8 @@ $varian_stmt->close();
         </ul>
     </div>
 
-    <!-- Navbar (same as before) -->
+
+    <!-- Navbar -->
     <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="container">
             <div class="left-section">
@@ -702,66 +594,90 @@ $varian_stmt->close();
         <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
     </div>
 
-    <!-- Product Detail Section -->
-    <div class="product-detail-container">
-        <div class="row">
-            <div class="col-md-6">
-                <img src="../../admin/uploads/<?= htmlspecialchars($product['foto_thumbnail'] ?? 'default.jpg') ?>"
-                    alt="<?= htmlspecialchars($product['nama_produk']) ?>"
-                    class="product-image">
-            </div>
-            <div class="col-md-6">
-                <h1 class="product-title"><?= htmlspecialchars($product['nama_produk']) ?></h1>
+    <div class="row">
+        <?php
+        $sql = "SELECT * FROM tb_adminProduct WHERE stok = 'tersedia'";
+        $result = $conn->query($sql);
+        ?>
+        <?php while ($row = $result->fetch_assoc()): ?>
+            <div class="col-sm-6 col-md-3 mb-4">
+                <div class="card d-flex flex-column rounded h-100"
+                    style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
 
-                <div class="product-price">
-                    <?php if ($product['is_diskon'] && $product['harga_diskon'] > 0): ?>
-                        <div class="price-container">
-                            <span class="original-price">Rp<?= number_format($product['harga'], 0, ',', '.') ?></span>
-                            <span class="discounted-price">Rp<?= number_format($product['harga_diskon'], 0, ',', '.') ?></span>
+                    <!-- Gambar produk -->
+                    <div style="aspect-ratio: 4/3; overflow: hidden; border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+                        <img src="../../admin/uploads/<?= htmlspecialchars($row['foto_thumbnail'] ?? 'default.jpg') ?>"
+                            alt="Produk" class="img-fluid w-100 h-100"
+                            style="object-fit: contain; padding: 5px;">
+                    </div>
+
+                    <!-- Konten produk -->
+                    <div class="card-body d-flex flex-column p-2 flex-grow-1">
+                        <h6 class="card-title mb-1" style="font-size: 0.95rem;">
+                            <?= htmlspecialchars($row['nama_produk']) ?>
+                        </h6>
+                        <p class="card-text mb-2" style="font-size: 0.85rem;">
+                            <?= htmlspecialchars($row['detail']) ?>
+                        </p>
+
+                        <!-- Harga produk -->
+                        <div class="mb-2">
+                            <?php if ($row['is_diskon'] && $row['harga_diskon'] > 0): ?>
+                                <div class="price-container">
+                                    <span class="original-price">Rp<?= number_format($row['harga'], 0, ',', '.') ?></span>
+                                    <span class="discounted-price">Rp<?= number_format($row['harga_diskon'], 0, ',', '.') ?></span>
+                                </div>
+                            <?php else: ?>
+                                <span class="text-success" style="font-size: 0.9rem; font-weight: bold;">
+                                    Rp<?= number_format($row['harga'], 0, ',', '.') ?>
+                                </span>
+                            <?php endif; ?>
                         </div>
-                    <?php else: ?>
-                        <span class="text-success" style="font-weight: bold;">
-                            Rp<?= number_format($product['harga'], 0, ',', '.') ?>
-                        </span>
-                    <?php endif; ?>
+
+                        <!-- Varian produk -->
+                        <?php
+                        $product_id = $row['id'];
+                        $varianQuery = "SELECT id, varian FROM tb_varian_product WHERE product_id = $product_id AND stok > 0";
+                        $varianResult = $conn->query($varianQuery);
+                        if ($varianResult->num_rows > 0):
+                        ?>
+                            <select class="form-select form-select-sm mb-2 varian-select" data-product-id="<?= $product_id ?>">
+                                <option value="">Pilih varian</option>
+                                <?php while ($v = $varianResult->fetch_assoc()): ?>
+                                    <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['varian']) ?></option>
+                                <?php endwhile; ?>
+                            </select>
+                        <?php endif; ?>
+
+                        <!-- Tombol keranjang -->
+                        <div class="mt-auto d-grid gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary add-to-cart-btn"
+                                data-product-id="<?= $product_id ?>"
+                                <?= $varianResult->num_rows > 0 ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>>
+                                <i class="bi bi-cart-plus"></i> Keranjang
+                            </button>
+                        </div>
+                    </div>
                 </div>
-
-                <p class="product-description"><?= htmlspecialchars($product['detail']) ?></p>
-
-                <?php if (!empty($variants)): ?>
-                    <select class="form-select variant-select" id="productVariant" data-product-id="<?= $product_id ?>">
-                        <option value="">Pilih varian</option>
-                        <?php foreach ($variants as $variant): ?>
-                            <option value="<?= $variant['id'] ?>"><?= htmlspecialchars($variant['varian']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                <?php endif; ?>
-
-                <button type="button" class="btn btn-primary add-to-cart-btn"
-                    data-product-id="<?= $product_id ?>"
-                    <?= !empty($variants) ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>>
-                    <i class="bi bi-cart-plus"></i> Tambah ke Keranjang
-                </button>
             </div>
-        </div>
-    </div>
-
-    <!-- Modal untuk memilih varian -->
-    <div id="varianModal" class="varian-modal">
-        <div class="varian-modal-content">
-            <span class="close-modal">&times;</span>
-            <h5>Pilih Varian</h5>
-            <p id="modalErrorMessage" class="text-danger"></p>
-            <form id="varianForm" method="POST">
-                <input type="hidden" name="product_id" id="modalProductId">
-                <div class="mb-3">
-                    <select class="form-select" name="varian_id" id="modalVarianSelect" required>
-                        <option value="">Pilih varian</option>
-                    </select>
+            <!-- Modal untuk memilih varian -->
+            <div id="varianModal" class="varian-modal">
+                <div class="varian-modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h5>Pilih Varian</h5>
+                    <p id="modalErrorMessage" class="text-danger"></p>
+                    <form id="varianForm" method="POST">
+                        <input type="hidden" name="product_id" id="modalProductId">
+                        <div class="mb-3">
+                            <select class="form-select" name="varian_id" id="modalVarianSelect" required>
+                                <option value="">Pilih varian</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="add_to_cart" class="btn btn-primary">Tambahkan ke Keranjang</button>
+                    </form>
                 </div>
-                <button type="submit" name="add_to_cart" class="btn btn-primary">Tambahkan ke Keranjang</button>
-            </form>
-        </div>
+            </div>
+        <?php endwhile; ?>
     </div>
 
     <script>
@@ -865,7 +781,7 @@ $varian_stmt->close();
             modalVarianSelect.innerHTML = '<option value="">Pilih varian</option>';
 
             // Ambil varian dari select yang sesuai dengan productId
-            const originalSelect = document.querySelector(`.variant-select[data-product-id="${productId}"]`);
+            const originalSelect = document.querySelector(`.varian-select[data-product-id="${productId}"]`);
             if (originalSelect) {
                 // Clone semua option dari select asli ke modal select
                 const options = originalSelect.querySelectorAll('option');
@@ -915,7 +831,7 @@ $varian_stmt->close();
 
                 if (hasVarian) {
                     // Cek apakah varian sudah dipilih
-                    const varianSelect = document.querySelector(`.variant-select[data-product-id="${productId}"]`);
+                    const varianSelect = document.querySelector(`.varian-select[data-product-id="${productId}"]`);
                     if (!varianSelect || !varianSelect.value) {
                         // Tampilkan modal untuk memilih varian
                         showVarianModal(productId, "Silakan pilih varian terlebih dahulu");

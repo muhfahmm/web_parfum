@@ -10,7 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $is_diskon = isset($_POST['is_diskon']) ? 1 : 0;
     $etalase_toko = $_POST['etalase_toko'];
     $detail = $_POST['detail'];
-    $jumlah_stok = $_POST['jumlah_stok'];
+    
+    // Modifikasi: Jika jumlah_stok kosong, set ke 0
+    $jumlah_stok = $_POST['jumlah_stok'] !== '' ? (int)$_POST['jumlah_stok'] : 0;
     $stok = $_POST['stok'];
 
     // Upload foto thumbnail
@@ -35,7 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Simpan semua nama foto produk jadi satu string JSON
     $foto_produk_json = json_encode($foto_produk_names);
 
     // Simpan produk ke tb_adminProduct
@@ -61,27 +62,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_id = $stmt->insert_id;
     $stmt->close();
 
+    // Hitung total stok varian jika jumlah_stok utama 0
+    $total_stok_varian = 0;
+    $has_valid_varian = false;
+    
     // Simpan varian produk ke tb_varian_product
-    if (!empty($_POST['varian']) && !empty($_POST['stok_varian'])) {
+    if (!empty($_POST['varian'])) {
         $varian_arr = $_POST['varian'];
-        $stok_varian_arr = $_POST['stok_varian'];
+        $stok_varian_arr = $_POST['stok_varian'] ?? [];
 
         $stmtVarian = $conn->prepare("INSERT INTO tb_varian_product (product_id, varian, stok) VALUES (?, ?, ?)");
         for ($i = 0; $i < count($varian_arr); $i++) {
             $nama_varian = trim($varian_arr[$i]);
-            $stok_varian = (int) $stok_varian_arr[$i];
-            if ($nama_varian !== '' && $stok_varian >= 0) {
+            $stok_varian = isset($stok_varian_arr[$i]) ? (int)$stok_varian_arr[$i] : 0;
+            
+            if ($nama_varian !== '') {
                 $stmtVarian->bind_param("isi", $product_id, $nama_varian, $stok_varian);
                 $stmtVarian->execute();
+                $total_stok_varian += $stok_varian;
+                $has_valid_varian = true;
             }
         }
         $stmtVarian->close();
+        
+        // Update stok utama jika hanya varian yang diisi
+        if ($jumlah_stok == 0 && $total_stok_varian > 0) {
+            $updateStmt = $conn->prepare("UPDATE tb_adminProduct SET jumlah_stok = ? WHERE id = ?");
+            $updateStmt->bind_param("ii", $total_stok_varian, $product_id);
+            $updateStmt->execute();
+            $updateStmt->close();
+        }
     }
 
-    echo "<div class='alert alert-success'>Produk berhasil disimpan!</div>";
+    // Validasi minimal ada stok utama atau varian
+    if ($jumlah_stok == 0 && !$has_valid_varian) {
+        echo "<div class='alert alert-danger'>Error: Harap isi stok utama atau tambahkan varian dengan stok</div>";
+        // Hapus produk yang sudah dibuat jika validasi gagal
+        $conn->query("DELETE FROM tb_adminProduct WHERE id = $product_id");
+    } else {
+        // Redirect ke product.php setelah berhasil menyimpan
+        header("Location: product.php");
+        exit(); // Pastikan tidak ada kode yang dieksekusi setelah redirect
+    }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="id">
@@ -97,13 +121,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 10px;
             align-items: center;
         }
+        .alert {
+            margin-top: 20px;
+        }
     </style>
 </head>
 
 <body>
     <div class="container mt-5">
         <h3>Tambah Produk</h3>
-        <form action="" method="POST" enctype="multipart/form-data">
+        <form action="" method="POST" enctype="multipart/form-data" id="productForm">
 
             <!-- Kategori Produk -->
             <div class="mb-3">
@@ -129,11 +156,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Harga</label>
-                    <input type="number" name="harga" class="form-control" required>
+                    <input type="number" name="harga" class="form-control" required min="0">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Harga Diskon</label>
-                    <input type="number" name="harga_diskon" class="form-control">
+                    <input type="number" name="harga_diskon" class="form-control" min="0">
                     <div class="form-check mt-1">
                         <input class="form-check-input" type="checkbox" name="is_diskon" value="1" id="diskonCheck">
                         <label class="form-check-label" for="diskonCheck">Harga Diskon</label>
@@ -169,7 +196,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Jumlah Stok</label>
-                    <input type="number" name="jumlah_stok" class="form-control" required>
+                    <input type="number" name="jumlah_stok" class="form-control" min="0" id="jumlah_stok">
+                    <small class="text-muted">Biarkan kosong (0) jika hanya mengisi stok varian</small>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Status Stok</label>
@@ -186,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div id="varian-container">
                     <div class="varian-row">
                         <input type="text" name="varian[]" class="form-control" placeholder="Nama Varian">
-                        <input type="number" name="stok_varian[]" class="form-control" placeholder="Stok Varian">
+                        <input type="number" name="stok_varian[]" class="form-control" placeholder="Stok Varian" min="0">
                         <button type="button" class="btn btn-danger btn-sm remove-varian">X</button>
                     </div>
                 </div>
@@ -198,21 +226,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+        // Tambahkan baris varian baru
         document.getElementById('add-varian').addEventListener('click', function() {
             const container = document.getElementById('varian-container');
             const row = document.createElement('div');
             row.className = 'varian-row';
             row.innerHTML = `
-      <input type="text" name="varian[]" class="form-control" placeholder="Nama Varian">
-      <input type="number" name="stok_varian[]" class="form-control" placeholder="Stok Varian">
-      <button type="button" class="btn btn-danger btn-sm remove-varian">X</button>
-    `;
+                <input type="text" name="varian[]" class="form-control" placeholder="Nama Varian">
+                <input type="number" name="stok_varian[]" class="form-control" placeholder="Stok Varian" min="0">
+                <button type="button" class="btn btn-danger btn-sm remove-varian">X</button>
+            `;
             container.appendChild(row);
         });
 
+        // Hapus baris varian
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-varian')) {
                 e.target.parentElement.remove();
+            }
+        });
+
+        // Validasi form sebelum submit
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            const jumlahStok = document.getElementById('jumlah_stok').value;
+            const varianInputs = document.querySelectorAll('[name="varian[]"]');
+            let hasValidVarian = false;
+            
+            // Cek apakah ada varian yang diisi
+            varianInputs.forEach(input => {
+                if (input.value.trim() !== '') {
+                    hasValidVarian = true;
+                }
+            });
+            
+            // Validasi minimal ada stok utama atau varian
+            if (jumlahStok === '0' && !hasValidVarian) {
+                e.preventDefault();
+                alert('Harap isi jumlah stok utama atau tambahkan varian dengan stok');
             }
         });
     </script>
