@@ -13,7 +13,7 @@ if (!$product_id) {
     exit();
 }
 
-// Handle cart operations (same as before)
+// Handle cart operations
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$user_id) {
         header("Location: ./user controller/login.php");
@@ -24,8 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_to_cart'])) {
         $product_id = (int)$_POST['product_id'];
         $varian_id = isset($_POST['varian_id']) && !empty($_POST['varian_id']) ? (int)$_POST['varian_id'] : null;
+        $quantity = isset($_POST['quantity']) ? max(1, (int)$_POST['quantity']) : 1; // Ensure quantity is at least 1
 
-        // Cek apakah produk ini memiliki varian
+        // Check if product has variants
         $check_has_varian = $conn->prepare("SELECT COUNT(*) FROM tb_varian_product WHERE product_id = ?");
         $check_has_varian->bind_param("i", $product_id);
         $check_has_varian->execute();
@@ -33,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $check_has_varian->fetch();
         $check_has_varian->close();
 
-        // Jika produk memiliki varian tapi user belum memilih
+        // If product has variants but user hasn't selected one
         if ($has_varian > 0 && !$varian_id) {
             $_SESSION['error_message'] = "Silakan pilih varian terlebih dahulu";
             $_SESSION['product_id_needs_varian'] = $product_id;
@@ -41,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        // Validasi varian_id sesuai dengan product_id
+        // Validate variant_id matches product_id
         if ($varian_id) {
             $check_varian = $conn->prepare("SELECT id FROM tb_varian_product WHERE id = ? AND product_id = ?");
             $check_varian->bind_param("ii", $varian_id, $product_id);
@@ -49,29 +50,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $check_varian->store_result();
 
             if ($check_varian->num_rows === 0) {
-                // Varian tidak valid untuk produk ini
+                // Invalid variant for this product
                 $varian_id = null;
             }
             $check_varian->close();
         }
 
-        // Cek apakah produk (dengan varian yang sama) sudah ada di keranjang
+        // Check if product (with same variant) already exists in cart
         $check_stmt = $conn->prepare("SELECT id, jumlah FROM tb_cart WHERE user_id = ? AND product_id = ? AND varian_id <=> ?");
         $check_stmt->bind_param("iii", $user_id, $product_id, $varian_id);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
 
         if ($check_result->num_rows > 0) {
-            // Update jumlah jika produk sudah ada
+            // Update quantity if product already exists
             $row = $check_result->fetch_assoc();
-            $new_jumlah = $row['jumlah'] + 1;
+            $new_jumlah = $quantity; // Use the specified quantity (overwrite existing)
             $update_stmt = $conn->prepare("UPDATE tb_cart SET jumlah = ? WHERE id = ?");
             $update_stmt->bind_param("ii", $new_jumlah, $row['id']);
             $update_stmt->execute();
             $update_stmt->close();
         } else {
-            // Tambahkan produk baru ke keranjang
-            // Ambil foto thumbnail produk
+            // Add new product to cart
+            // Get product thumbnail
             $product_stmt = $conn->prepare("SELECT foto_thumbnail FROM tb_adminProduct WHERE id = ?");
             $product_stmt->bind_param("i", $product_id);
             $product_stmt->execute();
@@ -79,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $product_stmt->fetch();
             $product_stmt->close();
 
-            $insert_stmt = $conn->prepare("INSERT INTO tb_cart (user_id, product_id, varian_id, foto_thumbnail, jumlah) VALUES (?, ?, ?, ?, 1)");
-            $insert_stmt->bind_param("iiis", $user_id, $product_id, $varian_id, $foto_thumbnail);
+            $insert_stmt = $conn->prepare("INSERT INTO tb_cart (user_id, product_id, varian_id, foto_thumbnail, jumlah) VALUES (?, ?, ?, ?, ?)");
+            $insert_stmt->bind_param("iiisi", $user_id, $product_id, $varian_id, $foto_thumbnail, $quantity);
             $insert_stmt->execute();
             $insert_stmt->close();
         }
@@ -124,13 +125,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $delete_stmt->close();
     }
 
-    // Set session flag untuk tetap membuka dropdown cart
+    // Set session flag to keep cart dropdown open
     $_SESSION['keep_cart_open'] = true;
     header("Location: " . $_SERVER['PHP_SELF'] . "?id=$product_id");
     exit();
 }
 
-// Get user info if logged in (same as before)
+// Get user info if logged in
 if ($username) {
     $stmt = $conn->prepare("SELECT email, nomor_hp FROM tb_userLogin WHERE username = ?");
     $stmt->bind_param("s", $username);
@@ -139,15 +140,16 @@ if ($username) {
     $stmt->fetch();
     $stmt->close();
 
-    // Hitung jumlah item di keranjang
-    $cart_count_stmt = $conn->prepare("SELECT SUM(jumlah) FROM tb_cart WHERE user_id = ?");
+    // Count cart items
+    // Count cart items (count distinct products, not sum quantities)
+    $cart_count_stmt = $conn->prepare("SELECT COUNT(*) FROM tb_cart WHERE user_id = ?");
     $cart_count_stmt->bind_param("i", $user_id);
     $cart_count_stmt->execute();
     $cart_count_stmt->bind_result($cart_count);
     $cart_count_stmt->fetch();
     $cart_count_stmt->close();
 
-    // Ambil data keranjang untuk dropdown
+    // Get cart data for dropdown
     $cart_items_stmt = $conn->prepare("
         SELECT c.id, p.nama_produk, 
                CASE WHEN p.is_diskon = 1 THEN p.harga_diskon ELSE p.harga END as harga,
@@ -172,11 +174,11 @@ if ($username) {
     $cart_items_stmt->close();
 }
 
-// Reset flag setelah digunakan
+// Reset flag after use
 $keep_cart_open = $_SESSION['keep_cart_open'] ?? false;
 unset($_SESSION['keep_cart_open']);
 
-// Ambil pesan error jika ada
+// Get error message if any
 $error_message = $_SESSION['error_message'] ?? null;
 $product_id_needs_varian = $_SESSION['product_id_needs_varian'] ?? null;
 unset($_SESSION['error_message']);
@@ -205,6 +207,9 @@ while ($variant = $varian_result->fetch_assoc()) {
     $variants[] = $variant;
 }
 $varian_stmt->close();
+
+// Calculate product price (use discounted price if available)
+$product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $product['harga_diskon'] : $product['harga'];
 ?>
 
 <!DOCTYPE html>
@@ -220,199 +225,7 @@ $varian_stmt->close();
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/sidebar.css">
     <style>
-        .price-container-navbar {
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-            font-size: 12px;
-            /* Tambahkan ini untuk memperkecil ukuran container harga */
-        }
-
-        .cart-dropdown {
-            position: absolute;
-            right: 0;
-            top: 100%;
-            width: 320px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            z-index: 1000;
-            display: none;
-        }
-
-        .cart-container.show .cart-dropdown {
-            display: block;
-        }
-
-        .cart-dropdown ul {
-            list-style: none;
-            padding: 0;
-            margin: 10px 0;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .cart-dropdown li {
-            display: flex;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .cart-dropdown li img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            margin-right: 10px;
-            border-radius: 3px;
-        }
-
-        .product-info {
-            flex-grow: 1;
-            font-size: 14px;
-        }
-
-        .product-price {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .total-price {
-            font-weight: bold;
-            text-align: right;
-            margin: 10px 0;
-        }
-
-        .view-all {
-            display: block;
-            text-align: center;
-            padding: 5px;
-            background: #f8f9fa;
-            border-radius: 3px;
-            color: #333;
-            text-decoration: none;
-        }
-
-        .empty-cart {
-            text-align: center;
-            padding: 20px;
-            color: #777;
-        }
-
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            margin-top: 5px;
-        }
-
-        .quantity-btn {
-            width: 25px;
-            height: 25px;
-            border: 1px solid #ddd;
-            background: #f8f9fa;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 3px;
-        }
-
-        .quantity-input {
-            width: 30px;
-            text-align: center;
-            margin: 0 5px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-        }
-
-        .remove-btn {
-            color: #dc3545;
-            background: none;
-            border: none;
-            cursor: pointer;
-            margin-left: 5px;
-            font-size: 12px;
-        }
-
-        .cart-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Modal untuk memilih varian */
-        .varian-modal {
-            display: none;
-            position: fixed;
-            z-index: 1050;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        .varian-modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
-            border-radius: 5px;
-        }
-
-        .close-modal {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close-modal:hover {
-            color: black;
-        }
-
-        /* Style untuk harga diskon */
-        .original-price {
-            text-decoration: line-through;
-            color: #6c757d;
-            font-size: 0.9em;
-            margin-right: 5px;
-
-        }
-
-        .discounted-price {
-            color: #dc3545;
-            font-weight: bold;
-            font-size: 1em;
-        }
-
-        .price-container {
-            display: flex;
-            align-items: center;
-        }
-
-        .price-container-navbar {
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-        }
-
-        /* Style untuk card produk */
+        /* Product card styles */
         .product-card {
             transition: transform 0.2s;
             height: 100%;
@@ -437,16 +250,7 @@ $varian_stmt->close();
             padding: 5px;
         }
 
-        .product-link {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .product-link:hover {
-            color: inherit;
-        }
-
-        /* Additional styles for product detail page */
+        /* Product detail page styles */
         .product-detail-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -464,15 +268,13 @@ $varian_stmt->close();
             margin-bottom: 1rem;
         }
 
-
-
         .product-description {
             margin-bottom: 1.5rem;
             line-height: 1.6;
         }
 
         .variant-select {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .add-to-cart-btn {
@@ -480,14 +282,109 @@ $varian_stmt->close();
             padding: 10px;
             font-size: 1.1rem;
         }
+
+        /* Quantity controls styling */
+        .quantity-control {
+            margin-bottom: 1.5rem;
+        }
+
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: 1px solid #ced4da;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn-nav {
+            width: 25px;
+            height: 25px;
+            font-size: 1.1rem;
+            border: 1px solid #ced4da;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .quantity-btn:focus {
+            box-shadow: none;
+            outline: none;
+        }
+
+        .quantity-input {
+            width: 50px;
+            height: 40px;
+            text-align: center;
+            border-left: none;
+            border-right: none;
+            font-weight: bold;
+        }
+
+        .quantity-input-nav {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+        
+        .quantity-input::-webkit-outer-spin-button,
+        .quantity-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .quantity-input {
+            -moz-appearance: textfield;
+        }
+
+        .input-group {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 0.375rem;
+        }
+
+        .input-group .btn:first-child {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .input-group .btn:last-child {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        /* Total price styling */
+        .total-price-container {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+            border: 1px solid #dee2e6;
+        }
+
+        .total-price-label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .total-price-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #28a745;
+        }
     </style>
-    <script src="./js/sidebarDropdown.js"></script>
 </head>
 
 <body>
     <!-- sidebar -->
     <?php
-    // Ambil data kategori dari database
+    // Get categories from database
     $query = "SELECT * FROM tb_adminCategory ORDER BY nama_kategori ASC";
     $result = mysqli_query($conn, $query);
     ?>
@@ -498,10 +395,11 @@ $varian_stmt->close();
             <li><a href="#" class="menu-item">Home</a></li>
             <li><a href="#" class="menu-item">About Us</a></li>
 
+            <!-- Produk Dropdown -->
             <li>
-                <div class="menu-item" onclick="toggleDropdown('produkDropdown', this)">
+                <div class="menu-item custom-dropdown-toggle" onclick="toggleDropdown('produkDropdown', this)">
                     <span>Produk</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                    <i class="bi bi-chevron-down"></i>
                 </div>
                 <div class="dropdown-content" id="produkDropdown">
                     <?php while ($row = mysqli_fetch_assoc($result)) : ?>
@@ -514,10 +412,11 @@ $varian_stmt->close();
 
             <li><a href="#" class="menu-item">Keranjang</a></li>
 
+            <!-- Marketplace Dropdown -->
             <li>
-                <div class="menu-item" onclick="toggleDropdown('marketplaceDropdown', this)">
+                <div class="menu-item custom-dropdown-toggle" onclick="toggleDropdown('marketplaceDropdown', this)">
                     <span>Marketplace</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                    <i class="bi bi-chevron-down"></i>
                 </div>
                 <div class="dropdown-content" id="marketplaceDropdown">
                     <a href="#">Tokopedia</a>
@@ -526,8 +425,57 @@ $varian_stmt->close();
             </li>
         </ul>
     </div>
+    <!-- CSS sidebar -->
+    <style>
+        .dropdown-content {
+            display: none;
+            padding-left: 20px;
+            margin-top: 5px;
+            flex-direction: column;
+        }
 
-    <!-- Navbar (same as before) -->
+        .dropdown-content a {
+            display: block;
+            padding: 5px 0;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .menu-item.custom-dropdown-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .menu-item.custom-dropdown-toggle.active+.dropdown-content {
+            display: flex;
+        }
+
+        .menu-item.custom-dropdown-toggle.active i {
+            transform: rotate(180deg);
+        }
+
+        /* Tidak mengganggu toggle Bootstrap */
+        .menu-item.custom-dropdown-toggle::after {
+            content: none !important;
+        }
+    </style>
+    <!-- JavaScript sidebar -->
+    <script>
+        function toggleDropdown(dropdownId, toggleElement) {
+            const dropdown = document.getElementById(dropdownId);
+            toggleElement.classList.toggle('active');
+
+            if (dropdown.style.display === 'flex') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'flex';
+            }
+        }
+    </script>
+
+    <!-- Navbar -->
     <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="container">
             <div class="left-section">
@@ -585,13 +533,13 @@ $varian_stmt->close();
                                                 <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
                                                     <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
                                                     <input type="hidden" name="action" value="decrease">
-                                                    <button type="submit" name="update_quantity" class="quantity-btn">-</button>
+                                                    <button type="submit" name="update_quantity" class="quantity-btn-nav">-</button>
                                                 </form>
-                                                <span class="quantity-input"><?= $item['jumlah'] ?></span>
+                                                <span class="quantity-input-nav border"><?= $item['jumlah'] ?></span>
                                                 <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
                                                     <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
                                                     <input type="hidden" name="action" value="increase">
-                                                    <button type="submit" name="update_quantity" class="quantity-btn">+</button>
+                                                    <button type="submit" name="update_quantity" class="quantity-btn-nav">+</button>
                                                 </form>
                                                 <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
                                                     <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
@@ -706,43 +654,240 @@ $varian_stmt->close();
     <div class="product-detail-container">
         <div class="row">
             <div class="col-md-6">
-                <img src="../../admin/uploads/<?= htmlspecialchars($product['foto_thumbnail'] ?? 'default.jpg') ?>"
+                <!-- Gambar utama yang besar -->
+                <img id="mainProductImage"
+                    src="../../admin/uploads/<?= htmlspecialchars($product['foto_thumbnail'] ?? 'default.jpg') ?>"
                     alt="<?= htmlspecialchars($product['nama_produk']) ?>"
-                    class="product-image">
+                    class="product-image img-fluid mb-3 rounded"
+                    style="max-height: 400px; width: auto; object-fit: contain;">
+
+                <?php
+                $foto_produk = json_decode($product['foto_produk'], true);
+                ?>
+
+                <!-- Container untuk thumbnail -->
+                <div class="thumbnail-container d-flex flex-wrap gap-2">
+                    <?php
+                    // Selalu tampilkan thumbnail utama pertama
+                    echo "<img src='../../admin/uploads/" . htmlspecialchars($product['foto_thumbnail'] ?? 'default.jpg') . "' 
+              alt='Thumbnail' 
+              class='img-thumbnail thumb-img active'
+              style='width: 80px; height: 80px; object-fit: cover; cursor: pointer;'
+              onclick='changeMainImage(this, \"" . htmlspecialchars($product['foto_thumbnail'] ?? 'default.jpg') . "\")'>";
+
+                    // Tampilkan foto produk lainnya jika ada
+                    if (is_array($foto_produk) && count($foto_produk) > 0) {
+                        foreach ($foto_produk as $foto) {
+                            echo "<img src='../../admin/uploads/" . htmlspecialchars($foto) . "' 
+                      alt='Foto Produk' 
+                      class='img-thumbnail thumb-img'
+                      style='width: 80px; height: 80px; object-fit: cover; cursor: pointer;'
+                      onclick='changeMainImage(this, \"" . htmlspecialchars($foto) . "\")'>";
+                        }
+                    } else {
+                        echo "<span class='text-muted align-self-center'>Tidak ada foto produk lainnya.</span>";
+                    }
+                    ?>
+                </div>
             </div>
+
+            <!-- JavaScript untuk mengelola galeri foto -->
+            <script>
+                function changeMainImage(thumbElement, imagePath) {
+                    const mainImage = document.getElementById('mainProductImage');
+                    const allThumbs = document.querySelectorAll('.thumb-img');
+
+                    // Update gambar utama
+                    mainImage.src = `../../admin/uploads/${imagePath}`;
+
+                    // Update active state pada thumbnail
+                    allThumbs.forEach(thumb => {
+                        thumb.classList.remove('active');
+                        thumb.style.opacity = '0.7';
+                    });
+
+                    thumbElement.classList.add('active');
+                    thumbElement.style.opacity = '1';
+
+                    // Animasi transisi halus
+                    mainImage.style.opacity = 0;
+                    setTimeout(() => {
+                        mainImage.style.opacity = 1;
+                    }, 100);
+                }
+
+                // Inisialisasi - beri style pada thumbnail aktif pertama
+                document.addEventListener('DOMContentLoaded', function() {
+                    const firstThumb = document.querySelector('.thumb-img');
+                    if (firstThumb) {
+                        firstThumb.classList.add('active');
+                        firstThumb.style.opacity = '1';
+                    }
+                });
+            </script>
+
+            <!-- CSS tambahan -->
+            <style>
+                .product-image {
+                    transition: opacity 0.3s ease;
+                }
+
+                .thumb-img {
+                    transition: all 0.2s ease;
+                }
+
+                .thumb-img:hover {
+                    transform: scale(1.05);
+                    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+                }
+
+                .thumb-img.active {
+                    border: 2px solid #0d6efd;
+                    opacity: 1 !important;
+                }
+
+                .thumbnail-container {
+                    max-height: 200px;
+                    overflow-y: auto;
+                    padding: 5px;
+                }
+            </style>
+            <?php
+            // Controller Code (should be at the top of your file or in a separate controller)
+            $product_id = $_GET['id'] ?? 0;
+
+            // Fetch main product data
+            $product_query = $conn->prepare("SELECT * FROM tb_adminProduct WHERE id = ?");
+            $product_query->bind_param("i", $product_id);
+            $product_query->execute();
+            $product_result = $product_query->get_result();
+            $product = $product_result->fetch_assoc();
+
+            // Fetch variants if they exist
+            $variants_query = $conn->prepare("SELECT id, varian, stok FROM tb_varian_product WHERE product_id = ?");
+            $variants_query->bind_param("i", $product_id);
+            $variants_query->execute();
+            $variants_result = $variants_query->get_result();
+            $variants = $variants_result->fetch_all(MYSQLI_ASSOC);
+
+            // Determine the product price (considering discount)
+            $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $product['harga_diskon'] : $product['harga'];
+            ?>
+
+            <!-- View Code -->
             <div class="col-md-6">
                 <h1 class="product-title"><?= htmlspecialchars($product['nama_produk']) ?></h1>
 
-                <div class="product-price">
+                <!-- Price Display -->
+                <div class="product-price mb-3">
                     <?php if ($product['is_diskon'] && $product['harga_diskon'] > 0): ?>
                         <div class="price-container">
                             <span class="original-price">Rp<?= number_format($product['harga'], 0, ',', '.') ?></span>
                             <span class="discounted-price">Rp<?= number_format($product['harga_diskon'], 0, ',', '.') ?></span>
                         </div>
                     <?php else: ?>
-                        <span class="text-success" style="font-weight: bold;">
-                            Rp<?= number_format($product['harga'], 0, ',', '.') ?>
+                        <span class="text-success fw-bold">Rp<?= number_format($product['harga'], 0, ',', '.') ?></span>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Stock Information -->
+                <div class="product-stock mb-3">
+                    <span class="stock-label fw-bold">Stok:</span>
+                    <?php if (!empty($variants)): ?>
+                        <span class="stock-value" id="variantStock">Pilih varian untuk melihat stok</span>
+                    <?php else: ?>
+                        <span class="stock-value">
+                            <?= $product['jumlah_stok'] ?> (<?= $product['stok'] == 'tersedia' ? 'Tersedia' : 'Habis' ?>)
                         </span>
                     <?php endif; ?>
                 </div>
 
-                <p class="product-description"><?= htmlspecialchars($product['detail']) ?></p>
+                <!-- Product Description -->
+                <p class="product-description mb-4"><?= htmlspecialchars($product['detail']) ?></p>
 
+                <!-- Variant Selection -->
                 <?php if (!empty($variants)): ?>
-                    <select class="form-select variant-select" id="productVariant" data-product-id="<?= $product_id ?>">
-                        <option value="">Pilih varian</option>
-                        <?php foreach ($variants as $variant): ?>
-                            <option value="<?= $variant['id'] ?>"><?= htmlspecialchars($variant['varian']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="mb-3">
+                        <label for="productVariant" class="form-label">Varian:</label>
+                        <select class="form-select variant-select" id="productVariant" data-product-id="<?= $product['id'] ?>">
+                            <option value="">Pilih varian</option>
+                            <?php foreach ($variants as $variant): ?>
+                                <?php
+                                $variant_stock = (int)$variant['stok'];
+                                $variant_status = $variant_stock > 0 ? 'Tersedia' : 'Habis';
+                                ?>
+                                <option value="<?= $variant['id'] ?>" data-stock="<?= $variant_stock ?>">
+                                    <?= htmlspecialchars($variant['varian']) ?> (Stok: <?= $variant_stock ?>, <?= $variant_status ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 <?php endif; ?>
 
-                <button type="button" class="btn btn-primary add-to-cart-btn"
-                    data-product-id="<?= $product_id ?>"
-                    <?= !empty($variants) ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>>
-                    <i class="bi bi-cart-plus"></i> Tambah ke Keranjang
-                </button>
+                <!-- Quantity Control -->
+                <div class="quantity-control mb-3">
+                    <label class="form-label">Jumlah:</label>
+                    <div class="input-group" style="max-width: 150px;">
+                        <button class="btn btn-outline-secondary quantity-btn minus" type="button">-</button>
+                        <input type="number" class="form-control text-center quantity-input"
+                            value="1" min="1"
+                            max="<?= empty($variants) ? $product['jumlah_stok'] : '' ?>"
+                            aria-label="Quantity" name="quantity" id="productQuantity">
+                        <button class="btn btn-outline-secondary quantity-btn plus" type="button">+</button>
+                    </div>
+                </div>
+
+                <!-- Total Price -->
+                <div class="total-price-container mb-4">
+                    <div class="total-price-label fw-bold">Total Harga:</div>
+                    <div class="total-price-value fw-bold" id="totalPriceValue">
+                        Rp<?= number_format($product_price, 0, ',', '.') ?>
+                    </div>
+                </div>
+
+                <!-- Add to Cart Button -->
+<button type="button" class="btn btn-primary add-to-cart-btn w-100 py-2 mb-2"
+    data-product-id="<?= $product['id'] ?>"
+    <?= !empty($variants) ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>
+    <?= (empty($variants) && ($product['stok'] == 'habis' || $product['jumlah_stok'] <= 0)) ? 'disabled' : '' ?>>
+    <i class="bi bi-cart-plus me-2"></i>Tambah ke Keranjang
+</button>
+
+<!-- Checkout Button -->
+<a href="../checkout-products/checkout.php" class="btn btn-success w-100 py-2">
+    <i class="bi bi-bag-check me-2"></i>Checkout
+</a>
             </div>
+
+            <!-- JavaScript for Variant Selection -->
+            <?php if (!empty($variants)): ?>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const variantSelect = document.getElementById('productVariant');
+                        const stockDisplay = document.getElementById('variantStock');
+                        const quantityInput = document.getElementById('productQuantity');
+                        const addToCartBtn = document.querySelector('.add-to-cart-btn');
+
+                        variantSelect.addEventListener('change', function() {
+                            const selectedOption = this.options[this.selectedIndex];
+
+                            if (selectedOption && selectedOption.value) {
+                                const stock = parseInt(selectedOption.getAttribute('data-stock'));
+                                const status = stock > 0 ? 'Tersedia' : 'Habis';
+
+                                stockDisplay.textContent = `${stock} (${status})`;
+                                quantityInput.max = stock;
+                                quantityInput.value = Math.min(1, stock);
+                                addToCartBtn.disabled = stock <= 0;
+                            } else {
+                                stockDisplay.textContent = 'Pilih varian untuk melihat stok';
+                                quantityInput.removeAttribute('max');
+                                addToCartBtn.disabled = true;
+                            }
+                        });
+                    });
+                </script>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -777,6 +922,20 @@ $varian_stmt->close();
         const modalErrorMessage = document.getElementById("modalErrorMessage");
         const varianForm = document.getElementById("varianForm");
         const closeModal = document.querySelector(".close-modal");
+        const quantityInput = document.getElementById("productQuantity");
+        const minusBtn = document.querySelector(".quantity-btn.minus");
+        const plusBtn = document.querySelector(".quantity-btn.plus");
+        const totalPriceValue = document.getElementById("totalPriceValue");
+
+        // Product price from PHP
+        const productPrice = <?= $product_price ?>;
+
+        // Function to update total price
+        function updateTotalPrice() {
+            const quantity = parseInt(quantityInput.value) || 1;
+            const totalPrice = productPrice * quantity;
+            totalPriceValue.textContent = 'Rp' + totalPrice.toLocaleString('id-ID');
+        }
 
         // Set cart dropdown tetap terbuka jika ada flag
         <?php if ($keep_cart_open): ?>
@@ -793,6 +952,36 @@ $varian_stmt->close();
             });
         <?php endif; ?>
 
+        // Initialize total price
+        updateTotalPrice();
+
+        // Quantity controls
+        minusBtn.addEventListener('click', function() {
+            let value = parseInt(quantityInput.value);
+            if (value > 1) {
+                quantityInput.value = value - 1;
+                updateTotalPrice();
+            }
+        });
+
+        plusBtn.addEventListener('click', function() {
+            let value = parseInt(quantityInput.value);
+            if (value < 99) {
+                quantityInput.value = value + 1;
+                updateTotalPrice();
+            }
+        });
+
+        quantityInput.addEventListener('change', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                this.value = 1;
+            } else if (value > 99) {
+                this.value = 99;
+            }
+            updateTotalPrice();
+        });
+
         function toggleSidebar() {
             sidebar.classList.toggle("active");
             hamburger.classList.toggle("active");
@@ -808,7 +997,6 @@ $varian_stmt->close();
 
         function toggleCartDropdown() {
             cartContainer.classList.toggle("show");
-            // Update aria-hidden
             const expanded = cartContainer.classList.contains("show");
             cartDropdown.setAttribute("aria-hidden", !expanded);
         }
@@ -825,9 +1013,7 @@ $varian_stmt->close();
             }
         });
 
-        // Klik di luar dropdown untuk menutup
         document.addEventListener("click", (e) => {
-            // Jangan tutup jika klik berasal dari form dalam cart
             if (e.target.closest('form') && e.target.closest('form').method === 'post') {
                 return;
             }
@@ -838,7 +1024,6 @@ $varian_stmt->close();
             }
         });
 
-        // Toggle search bar mobile
         searchIcon.addEventListener("click", () => {
             mobileSearch.classList.toggle("show");
         });
@@ -849,28 +1034,23 @@ $varian_stmt->close();
             }
         });
 
-        // Handle form submission untuk mencegah event bubbling
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', function(e) {
                 e.stopPropagation();
             });
         });
 
-        // Fungsi untuk menampilkan modal varian
         function showVarianModal(productId, errorMessage = null) {
             modalProductId.value = productId;
             modalErrorMessage.textContent = errorMessage || '';
 
-            // Kosongkan select terlebih dahulu
             modalVarianSelect.innerHTML = '<option value="">Pilih varian</option>';
 
-            // Ambil varian dari select yang sesuai dengan productId
             const originalSelect = document.querySelector(`.variant-select[data-product-id="${productId}"]`);
             if (originalSelect) {
-                // Clone semua option dari select asli ke modal select
                 const options = originalSelect.querySelectorAll('option');
                 options.forEach(option => {
-                    if (option.value) { // Skip option pertama yang kosong
+                    if (option.value) {
                         const newOption = document.createElement('option');
                         newOption.value = option.value;
                         newOption.textContent = option.textContent;
@@ -882,22 +1062,18 @@ $varian_stmt->close();
             varianModal.style.display = "block";
         }
 
-        // Fungsi untuk menutup modal
         function closeVarianModal() {
             varianModal.style.display = "none";
         }
 
-        // Event listener untuk tombol close modal
         closeModal.addEventListener("click", closeVarianModal);
 
-        // Tutup modal ketika klik di luar modal
         window.addEventListener("click", (e) => {
             if (e.target === varianModal) {
                 closeVarianModal();
             }
         });
 
-        // Handle submit form varian
         varianForm.addEventListener("submit", function(e) {
             e.preventDefault();
             if (!modalVarianSelect.value) {
@@ -907,22 +1083,19 @@ $varian_stmt->close();
             this.submit();
         });
 
-        // Handle klik tombol add to cart
         document.querySelectorAll('.add-to-cart-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const productId = this.getAttribute('data-product-id');
                 const hasVarian = this.getAttribute('data-has-varian') === 'true';
+                const quantity = parseInt(document.getElementById('productQuantity').value) || 1;
 
                 if (hasVarian) {
-                    // Cek apakah varian sudah dipilih
                     const varianSelect = document.querySelector(`.variant-select[data-product-id="${productId}"]`);
                     if (!varianSelect || !varianSelect.value) {
-                        // Tampilkan modal untuk memilih varian
                         showVarianModal(productId, "Silakan pilih varian terlebih dahulu");
                         return;
                     }
 
-                    // Jika varian sudah dipilih, submit form
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = '';
@@ -939,6 +1112,12 @@ $varian_stmt->close();
                     varianIdInput.value = varianSelect.value;
                     form.appendChild(varianIdInput);
 
+                    const quantityInput = document.createElement('input');
+                    quantityInput.type = 'hidden';
+                    quantityInput.name = 'quantity';
+                    quantityInput.value = quantity;
+                    form.appendChild(quantityInput);
+
                     const addToCartInput = document.createElement('input');
                     addToCartInput.type = 'hidden';
                     addToCartInput.name = 'add_to_cart';
@@ -948,7 +1127,6 @@ $varian_stmt->close();
                     document.body.appendChild(form);
                     form.submit();
                 } else {
-                    // Jika produk tidak memiliki varian, langsung submit
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = '';
@@ -958,6 +1136,12 @@ $varian_stmt->close();
                     productIdInput.name = 'product_id';
                     productIdInput.value = productId;
                     form.appendChild(productIdInput);
+
+                    const quantityInput = document.createElement('input');
+                    quantityInput.type = 'hidden';
+                    quantityInput.name = 'quantity';
+                    quantityInput.value = quantity;
+                    form.appendChild(quantityInput);
 
                     const addToCartInput = document.createElement('input');
                     addToCartInput.type = 'hidden';

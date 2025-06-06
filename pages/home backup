@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $product_id = (int)$_POST['product_id'];
         $varian_id = isset($_POST['varian_id']) && !empty($_POST['varian_id']) ? (int)$_POST['varian_id'] : null;
 
-        // Check if product has variants
+        // Cek apakah produk ini memiliki varian
         $check_has_varian = $conn->prepare("SELECT COUNT(*) FROM tb_varian_product WHERE product_id = ?");
         $check_has_varian->bind_param("i", $product_id);
         $check_has_varian->execute();
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $check_has_varian->fetch();
         $check_has_varian->close();
 
-        // If product has variants but user hasn't selected one
+        // Jika produk memiliki varian tapi user belum memilih
         if ($has_varian > 0 && !$varian_id) {
             $_SESSION['error_message'] = "Silakan pilih varian terlebih dahulu";
             $_SESSION['product_id_needs_varian'] = $product_id;
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        // Validate variant_id matches product_id
+        // Validasi varian_id sesuai dengan product_id
         if ($varian_id) {
             $check_varian = $conn->prepare("SELECT id FROM tb_varian_product WHERE id = ? AND product_id = ?");
             $check_varian->bind_param("ii", $varian_id, $product_id);
@@ -41,20 +41,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $check_varian->store_result();
 
             if ($check_varian->num_rows === 0) {
-                // Invalid variant for this product
+                // Varian tidak valid untuk produk ini
                 $varian_id = null;
             }
             $check_varian->close();
         }
 
-        // Check if product (with same variant) already exists in cart
+        // Cek apakah produk (dengan varian yang sama) sudah ada di keranjang
         $check_stmt = $conn->prepare("SELECT id, jumlah FROM tb_cart WHERE user_id = ? AND product_id = ? AND varian_id <=> ?");
         $check_stmt->bind_param("iii", $user_id, $product_id, $varian_id);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
 
         if ($check_result->num_rows > 0) {
-            // Update quantity if product already exists
+            // Update jumlah jika produk sudah ada
             $row = $check_result->fetch_assoc();
             $new_jumlah = $row['jumlah'] + 1;
             $update_stmt = $conn->prepare("UPDATE tb_cart SET jumlah = ? WHERE id = ?");
@@ -62,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update_stmt->execute();
             $update_stmt->close();
         } else {
-            // Add new product to cart
-            // Get product thumbnail
+            // Tambahkan produk baru ke keranjang
+            // Ambil foto thumbnail produk
             $product_stmt = $conn->prepare("SELECT foto_thumbnail FROM tb_adminProduct WHERE id = ?");
             $product_stmt->bind_param("i", $product_id);
             $product_stmt->execute();
@@ -116,13 +116,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $delete_stmt->close();
     }
 
-    // Set session flag to keep cart dropdown open
+    // Set session flag untuk tetap membuka dropdown cart
     $_SESSION['keep_cart_open'] = true;
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
 
-// Get user info if logged in
+// Misalnya $username sudah ada di session untuk navbar
 if ($username) {
     $stmt = $conn->prepare("SELECT email, nomor_hp FROM tb_userLogin WHERE username = ?");
     $stmt->bind_param("s", $username);
@@ -131,15 +131,15 @@ if ($username) {
     $stmt->fetch();
     $stmt->close();
 
-    // Count DISTINCT cart items (products + variants)
-    $cart_count_stmt = $conn->prepare("SELECT COUNT(*) FROM tb_cart WHERE user_id = ?");
+    // Hitung jumlah item di keranjang
+    $cart_count_stmt = $conn->prepare("SELECT SUM(jumlah) FROM tb_cart WHERE user_id = ?");
     $cart_count_stmt->bind_param("i", $user_id);
     $cart_count_stmt->execute();
     $cart_count_stmt->bind_result($cart_count);
     $cart_count_stmt->fetch();
     $cart_count_stmt->close();
 
-    // Get cart data for dropdown
+    // Ambil data keranjang untuk dropdown
     $cart_items_stmt = $conn->prepare("
         SELECT c.id, p.nama_produk, 
                CASE WHEN p.is_diskon = 1 THEN p.harga_diskon ELSE p.harga END as harga,
@@ -156,21 +156,19 @@ if ($username) {
     $cart_items_result = $cart_items_stmt->get_result();
     $cart_items = [];
     $total_price = 0;
-    $total_items = 0; // For total quantity of all items
 
     while ($item = $cart_items_result->fetch_assoc()) {
         $cart_items[] = $item;
         $total_price += $item['harga'] * $item['jumlah'];
-        $total_items += $item['jumlah'];
     }
     $cart_items_stmt->close();
 }
 
-// Reset flag after use
+// Reset flag setelah digunakan
 $keep_cart_open = $_SESSION['keep_cart_open'] ?? false;
 unset($_SESSION['keep_cart_open']);
 
-// Get error message if any
+// Ambil pesan error jika ada
 $error_message = $_SESSION['error_message'] ?? null;
 $product_id_needs_varian = $_SESSION['product_id_needs_varian'] ?? null;
 unset($_SESSION['error_message']);
@@ -448,7 +446,7 @@ unset($_SESSION['product_id_needs_varian']);
             <div class="col-sm-6 col-md-3 mb-4">
                 <div class="card product-card d-flex flex-column rounded h-100"
                     style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
-
+                    
                     <!-- Gambar produk dengan link ke detail produk -->
                     <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
                         <div class="product-image-container">
@@ -529,92 +527,6 @@ unset($_SESSION['product_id_needs_varian']);
         <?php endwhile; ?>
     </div>
 
-    <!-- Cart Dropdown Section - Modified to show both counts -->
-    <div class="cart-dropdown" id="cartDropdown" role="menu" aria-hidden="<?= $keep_cart_open ? 'false' : 'true' ?>">
-        <?php if (isset($cart_count) && $cart_count > 0): ?>
-            <div class="cart-header">
-                <strong>Keranjang (<?= $cart_count ?> item<?= $cart_count > 1 ? 's' : '' ?>)</strong>
-                <small class="text-muted"><?= $total_items ?> barang</small>
-            </div>
-            <ul>
-                <?php foreach ($cart_items as $item): ?>
-                    <li>
-                        <img src="../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
-                        <div class="product-info">
-                            <?= htmlspecialchars($item['nama_produk']) ?>
-                            <?php if (!empty($item['varian'])): ?>
-                                <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
-                            <?php endif; ?>
-                            <div class="quantity-controls">
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <input type="hidden" name="action" value="decrease">
-                                    <button type="submit" name="update_quantity" class="quantity-btn">-</button>
-                                </form>
-                                <span class="quantity-input"><?= $item['jumlah'] ?></span>
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <input type="hidden" name="action" value="increase">
-                                    <button type="submit" name="update_quantity" class="quantity-btn">+</button>
-                                </form>
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="product-price">
-                            <?php if ($item['is_diskon']): ?>
-                                <div class="price-container-navbar">
-                                    <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
-                                    <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
-                                </div>
-                            <?php else: ?>
-                                Rp<?= number_format($item['harga'], 0, ',', '.') ?>
-                            <?php endif; ?>
-                            <div class="item-total">
-                                Rp<?= number_format($item['harga'] * $item['jumlah'], 0, ',', '.') ?>
-                            </div>
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-            <div class="cart-footer">
-                <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
-                <a href="#" class="view-all">Lihat semua</a>
-            </div>
-        <?php else: ?>
-            <div class="empty-cart">Keranjang belanja kosong</div>
-        <?php endif; ?>
-    </div>
-
-    <!-- Add some CSS for the new elements -->
-    <style>
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-bottom: 1px solid #eee;
-        }
-
-        .cart-footer {
-            padding: 0.5rem 1rem;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .item-total {
-            font-weight: bold;
-            margin-top: 0.25rem;
-        }
-    </style>
-
-    <!-- Rest of your HTML remains the same -->
     <script>
         const hamburger = document.getElementById("hamburger");
         const sidebar = document.getElementById("sidebar");
