@@ -1,6 +1,5 @@
 <?php
-session_start();
-require './db.php';
+require '../db.php';
 
 $username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
 $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
@@ -8,7 +7,7 @@ $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 // Handle cart operations
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$user_id) {
-        header("Location: ./user-controller/login.php");
+        header("Location: ./user controller/login.php");
         exit();
     }
 
@@ -187,8 +186,8 @@ unset($_SESSION['product_id_needs_varian']);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="./css/navbar.css">
-    <link rel="stylesheet" href="./css/sidebar.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/sidebar.css">
     <style>
         .product-card:hover {
             transform: translateY(-5px);
@@ -218,11 +217,10 @@ unset($_SESSION['product_id_needs_varian']);
             color: inherit;
         }
     </style>
-    <script src="./js/sidebarDropdown.js"></script>
+    <script src="../js/sidebarDropdown.js"></script>
 </head>
 
-<body>
-
+<body> 
     <!-- sidebar -->
     <?php
     // Ambil data kategori dari database
@@ -313,8 +311,8 @@ unset($_SESSION['product_id_needs_varian']);
                             <ul>
                                 <?php foreach ($cart_items as $item): ?>
                                     <li>
-                                        <a href="./checkout-products/checkoutFromCart.php?id=<?= $item['id'] ?>" class="cart-item-link">
-                                            <img src="../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
+                                        <a href="../checkout-products/checkoutFromCart.php?id=<?= $item['id'] ?>" class="cart-item-link">
+                                            <img src="../../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
 
                                             <div class="product-info">
                                                 <?= htmlspecialchars($item['nama_produk']) ?>
@@ -486,7 +484,7 @@ unset($_SESSION['product_id_needs_varian']);
                             <a href="./riwayat_pembelian.php" class="menu-item"><i class="bi bi-bag"></i> Pembelian</a>
                             <a href="./pengaturan_akun.php" class="menu-item"><i class="bi bi-gear"></i> Pengaturan</a>
                             <hr>
-                            <a href="logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
+                            <a href="../logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
                         </div>
                         <style>
                             .user-dropdown {
@@ -540,8 +538,8 @@ unset($_SESSION['product_id_needs_varian']);
                         </style>
                     </div>
                 <?php else : ?>
-                    <a href="./user-controller/login.php">Login</a>
-                    <a href="./user-controller/register.php">Register</a>
+                    <a href="../user-controller/login.php">Login</a>
+                    <a href="../user-controller/register.php">Register</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -613,97 +611,6 @@ unset($_SESSION['product_id_needs_varian']);
         <?php endif; ?>
     </div>
 
-    <!-- produk -->
-    <div class="row">
-        <?php
-        $sql = "SELECT * FROM tb_adminProduct WHERE stok = 'tersedia'";
-        $result = $conn->query($sql);
-        ?>
-        <?php while ($row = $result->fetch_assoc()): ?>
-            <div class="col-sm-6 col-md-3 mb-4">
-                <div class="card product-card d-flex flex-column rounded h-100"
-                    style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
-
-                    <!-- Gambar produk dengan link ke detail produk -->
-                    <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
-                        <div class="product-image-container">
-                            <img src="../admin/uploads/<?= htmlspecialchars($row['foto_thumbnail'] ?? 'default.jpg') ?>"
-                                alt="Produk" class="product-image">
-                        </div>
-                    </a>
-
-                    <!-- Konten produk -->
-                    <div class="card-body d-flex flex-column p-2 flex-grow-1">
-                        <!-- Nama produk dengan link ke detail produk -->
-                        <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
-                            <h6 class="card-title mb-1" style="font-size: 0.95rem;">
-                                <?= htmlspecialchars($row['nama_produk']) ?>
-                            </h6>
-                            <p class="card-text mb-2" style="font-size: 0.85rem;">
-                                <?= htmlspecialchars($row['detail']) ?>
-                            </p>
-                        </a>
-
-                        <!-- Harga produk -->
-                        <div class="mb-2">
-                            <?php if ($row['is_diskon'] && $row['harga_diskon'] > 0): ?>
-                                <div class="price-container">
-                                    <span class="original-price">Rp<?= number_format($row['harga'], 0, ',', '.') ?></span>
-                                    <span class="discounted-price">Rp<?= number_format($row['harga_diskon'], 0, ',', '.') ?></span>
-                                </div>
-                            <?php else: ?>
-                                <span class="text-success" style="font-size: 0.9rem; font-weight: bold;">
-                                    Rp<?= number_format($row['harga'], 0, ',', '.') ?>
-                                </span>
-                            <?php endif; ?>
-                        </div>
-
-                        <!-- Varian produk -->
-                        <?php
-                        $product_id = $row['id'];
-                        $varianQuery = "SELECT id, varian FROM tb_varian_product WHERE product_id = $product_id AND stok > 0";
-                        $varianResult = $conn->query($varianQuery);
-                        if ($varianResult->num_rows > 0):
-                        ?>
-                            <select class="form-select form-select-sm mb-2 varian-select" data-product-id="<?= $product_id ?>">
-                                <option value="">Pilih varian</option>
-                                <?php while ($v = $varianResult->fetch_assoc()): ?>
-                                    <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['varian']) ?></option>
-                                <?php endwhile; ?>
-                            </select>
-                        <?php endif; ?>
-
-                        <!-- Tombol keranjang -->
-                        <div class="mt-auto d-grid gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary add-to-cart-btn"
-                                data-product-id="<?= $product_id ?>"
-                                <?= $varianResult->num_rows > 0 ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>>
-                                <i class="bi bi-cart-plus"></i> Keranjang
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Modal untuk memilih varian -->
-            <div id="varianModal" class="varian-modal">
-                <div class="varian-modal-content">
-                    <span class="close-modal">&times;</span>
-                    <h5>Pilih Varian</h5>
-                    <p id="modalErrorMessage" class="text-danger"></p>
-                    <form id="varianForm" method="POST">
-                        <input type="hidden" name="product_id" id="modalProductId">
-                        <div class="mb-3">
-                            <select class="form-select" name="varian_id" id="modalVarianSelect" required>
-                                <option value="">Pilih varian</option>
-                            </select>
-                        </div>
-                        <button type="submit" name="add_to_cart" class="btn btn-primary">Tambahkan ke Keranjang</button>
-                    </form>
-                </div>
-            </div>
-        <?php endwhile; ?>
-    </div>
-
     <!-- Add some CSS for the new elements -->
     <style>
         .cart-header {
@@ -727,8 +634,8 @@ unset($_SESSION['product_id_needs_varian']);
             margin-top: 0.25rem;
         }
     </style>
-    <a href="./checkout-products/checkoutFromCart.php">sdfsdfsdfsdf</a> 
-    <a href="./map address/maps.php">map</a>
+
+
     <!-- Rest of your HTML remains the same -->
     <script>
         const hamburger = document.getElementById("hamburger");
