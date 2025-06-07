@@ -222,6 +222,7 @@ unset($_SESSION['product_id_needs_varian']);
 </head>
 
 <body>
+
     <!-- sidebar -->
     <?php
     // Ambil data kategori dari database
@@ -312,42 +313,50 @@ unset($_SESSION['product_id_needs_varian']);
                             <ul>
                                 <?php foreach ($cart_items as $item): ?>
                                     <li>
-                                        <img src="../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
-                                        <div class="product-info">
-                                            <?= htmlspecialchars($item['nama_produk']) ?>
-                                            <?php if (!empty($item['varian'])): ?>
-                                                <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
-                                            <?php endif; ?>
-                                            <div class="quantity-controls">
-                                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                                    <input type="hidden" name="action" value="decrease">
-                                                    <button type="submit" name="update_quantity" class="quantity-btn">-</button>
-                                                </form>
-                                                <span class="quantity-input"><?= $item['jumlah'] ?></span>
-                                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                                    <input type="hidden" name="action" value="increase">
-                                                    <button type="submit" name="update_quantity" class="quantity-btn">+</button>
-                                                </form>
-                                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                                    <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                        <div class="product-price">
-                                            <?php if ($item['is_diskon']): ?>
-                                                <div class="price-container-navbar">
-                                                    <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
-                                                    <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
+                                        <a href="./checkout-products/checkoutFromCart.php?id=<?= $item['id'] ?>" class="cart-item-link">
+                                            <img src="../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
+
+                                            <div class="product-info">
+                                                <?= htmlspecialchars($item['nama_produk']) ?>
+                                                <?php if (!empty($item['varian'])): ?>
+                                                    <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
+                                                <?php endif; ?>
+
+                                                <div class="quantity-controls">
+                                                    <form method="POST" action="" onsubmit="event.stopPropagation();">
+                                                        <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                                        <input type="hidden" name="action" value="decrease">
+                                                        <button type="submit" name="update_quantity" class="quantity-btn">-</button>
+                                                    </form>
+
+                                                    <span class="quantity-input"><?= $item['jumlah'] ?></span>
+
+                                                    <form method="POST" action="" onsubmit="event.stopPropagation();">
+                                                        <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                                        <input type="hidden" name="action" value="increase">
+                                                        <button type="submit" name="update_quantity" class="quantity-btn">+</button>
+                                                    </form>
+
+                                                    <form method="POST" action="" onsubmit="event.stopPropagation();">
+                                                        <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                                        <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
                                                 </div>
-                                            <?php else: ?>
-                                                Rp<?= number_format($item['harga'], 0, ',', '.') ?>
-                                            <?php endif; ?>
-                                        </div>
+                                            </div>
+
+                                            <div class="product-price text-dark">
+                                                <?php if ($item['is_diskon']): ?>
+                                                    <div class="price-container-navbar">
+                                                        <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
+                                                        <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
+                                                    </div>
+                                                <?php else: ?>
+                                                    Rp<?= number_format($item['harga'], 0, ',', '.') ?>
+                                                <?php endif; ?>
+                                            </div>
+                                        </a>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
@@ -356,7 +365,111 @@ unset($_SESSION['product_id_needs_varian']);
                         <?php else: ?>
                             <div class="empty-cart">Keranjang belanja kosong</div>
                         <?php endif; ?>
+                        <style>
+                            .cart-item-link {
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                gap: 10px;
+                                padding: 10px 0;
+                                text-decoration: none;
+                                color: inherit;
+                            }
+
+                            .cart-item-link img {
+                                width: 50px;
+                                height: 50px;
+                                object-fit: cover;
+                                flex-shrink: 0;
+                                border-radius: 6px;
+                            }
+
+                            .product-info {
+                                flex-grow: 1;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 4px;
+                                color: black;
+                            }
+
+                            .quantity-controls {
+                                display: flex;
+                                align-items: center;
+                                gap: 6px;
+                                margin-top: 4px;
+                            }
+
+                            .quantity-btn,
+                            .remove-btn {
+                                background: none;
+                                border: 1px solid #ccc;
+                                padding: 2px 6px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                border-radius: 4px;
+                            }
+
+                            .quantity-input {
+                                min-width: 20px;
+                                text-align: center;
+                            }
+
+                            .product-price {
+                                white-space: nowrap;
+                                text-align: right;
+                            }
+
+                            .price-container-navbar {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 2px;
+                            }
+
+                            .original-price {
+                                text-decoration: line-through;
+                                color: gray;
+                                font-size: 12px;
+                            }
+
+                            .discounted-price {
+                                color: red;
+                                font-weight: bold;
+                            }
+
+                            .empty-cart {
+                                padding: 10px;
+                                text-align: center;
+                                color: #777;
+                            }
+
+                            .total-price {
+                                font-weight: bold;
+                                text-align: right;
+                                padding-top: 10px;
+                            }
+
+                            .view-all {
+                                display: block;
+                                text-align: right;
+                                padding-top: 5px;
+                                font-size: 14px;
+                                text-decoration: underline;
+                            }
+
+                            .quantity-input {
+                                min-width: 24px;
+                                padding: 2px 4px;
+                                text-align: center;
+                                border: 1px solid #ccc;
+                                border-radius: 4px;
+                                display: inline-block;
+                                background-color: #f9f9f9;
+                                color: black;
+                                font-size: 14px;
+                            }
+                        </style>
                     </div>
+
                 </div>
 
                 <!-- dropdown username -->
@@ -373,7 +486,7 @@ unset($_SESSION['product_id_needs_varian']);
                             <a href="./riwayat_pembelian.php" class="menu-item"><i class="bi bi-bag"></i> Pembelian</a>
                             <a href="./pengaturan_akun.php" class="menu-item"><i class="bi bi-gear"></i> Pengaturan</a>
                             <hr>
-                            <a href="./logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
+                            <a href="logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
                         </div>
                         <style>
                             .user-dropdown {
@@ -427,8 +540,8 @@ unset($_SESSION['product_id_needs_varian']);
                         </style>
                     </div>
                 <?php else : ?>
-                    <a href="./user controller/login.php">Login</a>
-                    <a href="./user controller/register.php">Register</a>
+                    <a href="../user controller/login.php">Login</a>
+                    <a href="../user controller/register.php">Register</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -439,6 +552,68 @@ unset($_SESSION['product_id_needs_varian']);
         <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
     </div>
 
+    <!-- Cart Dropdown Section - Modified to show both counts -->
+    <div class="cart-dropdown" id="cartDropdown" role="menu" aria-hidden="<?= $keep_cart_open ? 'false' : 'true' ?>">
+        <?php if (isset($cart_count) && $cart_count > 0): ?>
+            <div class="cart-header">
+                <strong>Keranjang (<?= $cart_count ?> item<?= $cart_count > 1 ? 's' : '' ?>)</strong>
+                <small class="text-muted"><?= $total_items ?> barang</small>
+            </div>
+            <ul>
+                <?php foreach ($cart_items as $item): ?>
+                    <li>
+                        <img src="../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
+                        <div class="product-info">
+                            <?= htmlspecialchars($item['nama_produk']) ?>
+                            <?php if (!empty($item['varian'])): ?>
+                                <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
+                            <?php endif; ?>
+                            <div class="quantity-controls">
+                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                    <input type="hidden" name="action" value="decrease">
+                                    <button type="submit" name="update_quantity" class="quantity-btn">-</button>
+                                </form>
+                                <span class="quantity-input"><?= $item['jumlah'] ?></span>
+                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                    <input type="hidden" name="action" value="increase">
+                                    <button type="submit" name="update_quantity" class="quantity-btn">+</button>
+                                </form>
+                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                    <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="product-price">
+                            <?php if ($item['is_diskon']): ?>
+                                <div class="price-container-navbar">
+                                    <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
+                                    <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
+                                </div>
+                            <?php else: ?>
+                                Rp<?= number_format($item['harga'], 0, ',', '.') ?>
+                            <?php endif; ?>
+                            <div class="item-total">
+                                Rp<?= number_format($item['harga'] * $item['jumlah'], 0, ',', '.') ?>
+                            </div>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <div class="cart-footer">
+                <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
+                <a href="#" class="view-all">Lihat semua</a>
+            </div>
+        <?php else: ?>
+            <div class="empty-cart">Keranjang belanja kosong</div>
+        <?php endif; ?>
+    </div>
+
+    <!-- produk -->
     <div class="row">
         <?php
         $sql = "SELECT * FROM tb_adminProduct WHERE stok = 'tersedia'";
@@ -529,67 +704,6 @@ unset($_SESSION['product_id_needs_varian']);
         <?php endwhile; ?>
     </div>
 
-    <!-- Cart Dropdown Section - Modified to show both counts -->
-    <div class="cart-dropdown" id="cartDropdown" role="menu" aria-hidden="<?= $keep_cart_open ? 'false' : 'true' ?>">
-        <?php if (isset($cart_count) && $cart_count > 0): ?>
-            <div class="cart-header">
-                <strong>Keranjang (<?= $cart_count ?> item<?= $cart_count > 1 ? 's' : '' ?>)</strong>
-                <small class="text-muted"><?= $total_items ?> barang</small>
-            </div>
-            <ul>
-                <?php foreach ($cart_items as $item): ?>
-                    <li>
-                        <img src="../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
-                        <div class="product-info">
-                            <?= htmlspecialchars($item['nama_produk']) ?>
-                            <?php if (!empty($item['varian'])): ?>
-                                <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
-                            <?php endif; ?>
-                            <div class="quantity-controls">
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <input type="hidden" name="action" value="decrease">
-                                    <button type="submit" name="update_quantity" class="quantity-btn">-</button>
-                                </form>
-                                <span class="quantity-input"><?= $item['jumlah'] ?></span>
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <input type="hidden" name="action" value="increase">
-                                    <button type="submit" name="update_quantity" class="quantity-btn">+</button>
-                                </form>
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="product-price">
-                            <?php if ($item['is_diskon']): ?>
-                                <div class="price-container-navbar">
-                                    <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
-                                    <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
-                                </div>
-                            <?php else: ?>
-                                Rp<?= number_format($item['harga'], 0, ',', '.') ?>
-                            <?php endif; ?>
-                            <div class="item-total">
-                                Rp<?= number_format($item['harga'] * $item['jumlah'], 0, ',', '.') ?>
-                            </div>
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-            <div class="cart-footer">
-                <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
-                <a href="#" class="view-all">Lihat semua</a>
-            </div>
-        <?php else: ?>
-            <div class="empty-cart">Keranjang belanja kosong</div>
-        <?php endif; ?>
-    </div>
-
     <!-- Add some CSS for the new elements -->
     <style>
         .cart-header {
@@ -613,7 +727,7 @@ unset($_SESSION['product_id_needs_varian']);
             margin-top: 0.25rem;
         }
     </style>
-
+    <a href="./checkout-products/checkoutFromCart.php">sdfsdfsdfsdf</a>
     <!-- Rest of your HTML remains the same -->
     <script>
         const hamburger = document.getElementById("hamburger");
