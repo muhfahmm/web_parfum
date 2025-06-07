@@ -485,7 +485,7 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                     <span></span>
                     <span></span>
                 </div>
-                <div class="logo" aria-label="Website logo">LOGO</div>
+                <a class="navbar-brand logo text-white" href="../home.php">Navbar</a>
             </div>
 
             <div class="search-bar">
