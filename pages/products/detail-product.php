@@ -16,78 +16,78 @@ if (!$product_id) {
 // Handle cart operations
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$user_id) {
-        header("Location: ./user controller/login.php");
+        header("Location: ../user-controller/login.php");
         exit();
     }
 
     // Handle add to cart
-    if (isset($_POST['add_to_cart'])) {
-        $product_id = (int)$_POST['product_id'];
-        $varian_id = isset($_POST['varian_id']) && !empty($_POST['varian_id']) ? (int)$_POST['varian_id'] : null;
-        $quantity = isset($_POST['quantity']) ? max(1, (int)$_POST['quantity']) : 1; // Ensure quantity is at least 1
+if (isset($_POST['add_to_cart'])) {
+    $product_id = (int)$_POST['product_id'];
+    $varian_id = isset($_POST['varian_id']) && !empty($_POST['varian_id']) ? (int)$_POST['varian_id'] : null;
+    $quantity = isset($_POST['quantity']) ? max(1, (int)$_POST['quantity']) : 1; // Ensure quantity is at least 1
 
-        // Check if product has variants
-        $check_has_varian = $conn->prepare("SELECT COUNT(*) FROM tb_varian_product WHERE product_id = ?");
-        $check_has_varian->bind_param("i", $product_id);
-        $check_has_varian->execute();
-        $check_has_varian->bind_result($has_varian);
-        $check_has_varian->fetch();
-        $check_has_varian->close();
+    // Check if product has variants
+    $check_has_varian = $conn->prepare("SELECT COUNT(*) FROM tb_varian_product WHERE product_id = ?");
+    $check_has_varian->bind_param("i", $product_id);
+    $check_has_varian->execute();
+    $check_has_varian->bind_result($has_varian);
+    $check_has_varian->fetch();
+    $check_has_varian->close();
 
-        // If product has variants but user hasn't selected one
-        if ($has_varian > 0 && !$varian_id) {
-            $_SESSION['error_message'] = "Silakan pilih varian terlebih dahulu";
-            $_SESSION['product_id_needs_varian'] = $product_id;
-            header("Location: " . $_SERVER['PHP_SELF'] . "?id=$product_id");
-            exit();
-        }
-
-        // Validate variant_id matches product_id
-        if ($varian_id) {
-            $check_varian = $conn->prepare("SELECT id FROM tb_varian_product WHERE id = ? AND product_id = ?");
-            $check_varian->bind_param("ii", $varian_id, $product_id);
-            $check_varian->execute();
-            $check_varian->store_result();
-
-            if ($check_varian->num_rows === 0) {
-                // Invalid variant for this product
-                $varian_id = null;
-            }
-            $check_varian->close();
-        }
-
-        // Check if product (with same variant) already exists in cart
-        $check_stmt = $conn->prepare("SELECT id, jumlah FROM tb_cart WHERE user_id = ? AND product_id = ? AND varian_id <=> ?");
-        $check_stmt->bind_param("iii", $user_id, $product_id, $varian_id);
-        $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
-
-        if ($check_result->num_rows > 0) {
-            // Update quantity if product already exists
-            $row = $check_result->fetch_assoc();
-            $new_jumlah = $quantity; // Use the specified quantity (overwrite existing)
-            $update_stmt = $conn->prepare("UPDATE tb_cart SET jumlah = ? WHERE id = ?");
-            $update_stmt->bind_param("ii", $new_jumlah, $row['id']);
-            $update_stmt->execute();
-            $update_stmt->close();
-        } else {
-            // Add new product to cart
-            // Get product thumbnail
-            $product_stmt = $conn->prepare("SELECT foto_thumbnail FROM tb_adminProduct WHERE id = ?");
-            $product_stmt->bind_param("i", $product_id);
-            $product_stmt->execute();
-            $product_stmt->bind_result($foto_thumbnail);
-            $product_stmt->fetch();
-            $product_stmt->close();
-
-            $insert_stmt = $conn->prepare("INSERT INTO tb_cart (user_id, product_id, varian_id, foto_thumbnail, jumlah) VALUES (?, ?, ?, ?, ?)");
-            $insert_stmt->bind_param("iiisi", $user_id, $product_id, $varian_id, $foto_thumbnail, $quantity);
-            $insert_stmt->execute();
-            $insert_stmt->close();
-        }
-
-        $check_stmt->close();
+    // If product has variants but user hasn't selected one
+    if ($has_varian > 0 && !$varian_id) {
+        $_SESSION['error_message'] = "Silakan pilih varian terlebih dahulu";
+        $_SESSION['product_id_needs_varian'] = $product_id;
+        header("Location: " . $_SERVER['PHP_SELF'] . "?id=$product_id");
+        exit();
     }
+
+    // Validate variant_id matches product_id
+    if ($varian_id) {
+        $check_varian = $conn->prepare("SELECT id FROM tb_varian_product WHERE id = ? AND product_id = ?");
+        $check_varian->bind_param("ii", $varian_id, $product_id);
+        $check_varian->execute();
+        $check_varian->store_result();
+
+        if ($check_varian->num_rows === 0) {
+            // Invalid variant for this product
+            $varian_id = null;
+        }
+        $check_varian->close();
+    }
+
+    // Check if product (with same variant) already exists in cart
+    $check_stmt = $conn->prepare("SELECT id, jumlah FROM tb_cart WHERE user_id = ? AND product_id = ? AND varian_id <=> ?");
+    $check_stmt->bind_param("iii", $user_id, $product_id, $varian_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+
+    if ($check_result->num_rows > 0) {
+        // Update quantity by ADDING the new quantity to existing quantity
+        $row = $check_result->fetch_assoc();
+        $new_jumlah = $row['jumlah'] + $quantity; // Tambahkan quantity baru ke yang sudah ada
+        $update_stmt = $conn->prepare("UPDATE tb_cart SET jumlah = ? WHERE id = ?");
+        $update_stmt->bind_param("ii", $new_jumlah, $row['id']);
+        $update_stmt->execute();
+        $update_stmt->close();
+    } else {
+        // Add new product to cart
+        // Get product thumbnail
+        $product_stmt = $conn->prepare("SELECT foto_thumbnail FROM tb_adminProduct WHERE id = ?");
+        $product_stmt->bind_param("i", $product_id);
+        $product_stmt->execute();
+        $product_stmt->bind_result($foto_thumbnail);
+        $product_stmt->fetch();
+        $product_stmt->close();
+
+        $insert_stmt = $conn->prepare("INSERT INTO tb_cart (user_id, product_id, varian_id, foto_thumbnail, jumlah) VALUES (?, ?, ?, ?, ?)");
+        $insert_stmt->bind_param("iiisi", $user_id, $product_id, $varian_id, $foto_thumbnail, $quantity);
+        $insert_stmt->execute();
+        $insert_stmt->close();
+    }
+
+    $check_stmt->close();
+}
     // Handle update quantity
     elseif (isset($_POST['update_quantity'])) {
         $cart_id = (int)$_POST['cart_id'];
@@ -333,15 +333,11 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
             font-weight: bold;
             margin: 0 5px;
         }
-        
+
         .quantity-input::-webkit-outer-spin-button,
         .quantity-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
-        }
-
-        .quantity-input {
-            -moz-appearance: textfield;
         }
 
         .input-group {
@@ -584,7 +580,7 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                             <a href="./riwayat_pembelian.php" class="menu-item"><i class="bi bi-bag"></i> Pembelian</a>
                             <a href="./pengaturan_akun.php" class="menu-item"><i class="bi bi-gear"></i> Pengaturan</a>
                             <hr>
-                            <a href="./logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
+                            <a href="../logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
                         </div>
                         <style>
                             .user-dropdown {
@@ -638,8 +634,8 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                         </style>
                     </div>
                 <?php else : ?>
-                    <a href="./user controller/login.php">Login</a>
-                    <a href="./user controller/register.php">Register</a>
+                    <a href="../user-controller/login.php">Login</a>
+                    <a href="../user-controller/register.php">Register</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -846,17 +842,17 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                 </div>
 
                 <!-- Add to Cart Button -->
-<button type="button" class="btn btn-primary add-to-cart-btn w-100 py-2 mb-2"
-    data-product-id="<?= $product['id'] ?>"
-    <?= !empty($variants) ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>
-    <?= (empty($variants) && ($product['stok'] == 'habis' || $product['jumlah_stok'] <= 0)) ? 'disabled' : '' ?>>
-    <i class="bi bi-cart-plus me-2"></i>Tambah ke Keranjang
-</button>
+                <button type="button" class="btn btn-primary add-to-cart-btn w-100 py-2 mb-2"
+                    data-product-id="<?= $product['id'] ?>"
+                    <?= !empty($variants) ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>
+                    <?= (empty($variants) && ($product['stok'] == 'habis' || $product['jumlah_stok'] <= 0)) ? 'disabled' : '' ?>>
+                    <i class="bi bi-cart-plus me-2"></i>Tambah ke Keranjang
+                </button>
 
-<!-- Checkout Button -->
-<a href="../checkout-products/checkout.php" class="btn btn-success w-100 py-2">
-    <i class="bi bi-bag-check me-2"></i>Checkout
-</a>
+                <!-- Checkout Button -->
+                <a href="../checkout-products/checkout.php" class="btn btn-success w-100 py-2">
+                    <i class="bi bi-bag-check me-2"></i>Checkout
+                </a>
             </div>
 
             <!-- JavaScript for Variant Selection -->
@@ -1083,77 +1079,79 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
             this.submit();
         });
 
-        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const productId = this.getAttribute('data-product-id');
-                const hasVarian = this.getAttribute('data-has-varian') === 'true';
-                const quantity = parseInt(document.getElementById('productQuantity').value) || 1;
+document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const productId = this.getAttribute('data-product-id');
+        const hasVarian = this.getAttribute('data-has-varian') === 'true';
+        const quantity = parseInt(document.getElementById('productQuantity').value) || 1;
 
-                if (hasVarian) {
-                    const varianSelect = document.querySelector(`.variant-select[data-product-id="${productId}"]`);
-                    if (!varianSelect || !varianSelect.value) {
-                        showVarianModal(productId, "Silakan pilih varian terlebih dahulu");
-                        return;
-                    }
+        if (hasVarian) {
+            const varianSelect = document.querySelector(`.variant-select[data-product-id="${productId}"]`);
+            if (!varianSelect || !varianSelect.value) {
+                showVarianModal(productId, "Silakan pilih varian terlebih dahulu");
+                return;
+            }
 
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '';
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '';
 
-                    const productIdInput = document.createElement('input');
-                    productIdInput.type = 'hidden';
-                    productIdInput.name = 'product_id';
-                    productIdInput.value = productId;
-                    form.appendChild(productIdInput);
+            const productIdInput = document.createElement('input');
+            productIdInput.type = 'hidden';
+            productIdInput.name = 'product_id';
+            productIdInput.value = productId;
+            form.appendChild(productIdInput);
 
-                    const varianIdInput = document.createElement('input');
-                    varianIdInput.type = 'hidden';
-                    varianIdInput.name = 'varian_id';
-                    varianIdInput.value = varianSelect.value;
-                    form.appendChild(varianIdInput);
+            const varianIdInput = document.createElement('input');
+            varianIdInput.type = 'hidden';
+            varianIdInput.name = 'varian_id';
+            varianIdInput.value = varianSelect.value;
+            form.appendChild(varianIdInput);
 
-                    const quantityInput = document.createElement('input');
-                    quantityInput.type = 'hidden';
-                    quantityInput.name = 'quantity';
-                    quantityInput.value = quantity;
-                    form.appendChild(quantityInput);
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'hidden';
+            quantityInput.name = 'quantity';
+            quantityInput.value = quantity;
+            form.appendChild(quantityInput);
 
-                    const addToCartInput = document.createElement('input');
-                    addToCartInput.type = 'hidden';
-                    addToCartInput.name = 'add_to_cart';
-                    addToCartInput.value = '1';
-                    form.appendChild(addToCartInput);
+            const addToCartInput = document.createElement('input');
+            addToCartInput.type = 'hidden';
+            addToCartInput.name = 'add_to_cart';
+            addToCartInput.value = '1';
+            form.appendChild(addToCartInput);
 
-                    document.body.appendChild(form);
-                    form.submit();
-                } else {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '';
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '';
 
-                    const productIdInput = document.createElement('input');
-                    productIdInput.type = 'hidden';
-                    productIdInput.name = 'product_id';
-                    productIdInput.value = productId;
-                    form.appendChild(productIdInput);
+            const productIdInput = document.createElement('input');
+            productIdInput.type = 'hidden';
+            productIdInput.name = 'product_id';
+            productIdInput.value = productId;
+            form.appendChild(productIdInput);
 
-                    const quantityInput = document.createElement('input');
-                    quantityInput.type = 'hidden';
-                    quantityInput.name = 'quantity';
-                    quantityInput.value = quantity;
-                    form.appendChild(quantityInput);
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'hidden';
+            quantityInput.name = 'quantity';
+            quantityInput.value = quantity;
+            form.appendChild(quantityInput);
 
-                    const addToCartInput = document.createElement('input');
-                    addToCartInput.type = 'hidden';
-                    addToCartInput.name = 'add_to_cart';
-                    addToCartInput.value = '1';
-                    form.appendChild(addToCartInput);
+            const addToCartInput = document.createElement('input');
+            addToCartInput.type = 'hidden';
+            addToCartInput.name = 'add_to_cart';
+            addToCartInput.value = '1';
+            form.appendChild(addToCartInput);
 
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            });
-        });
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+});
     </script>
 </body>
 
