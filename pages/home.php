@@ -727,9 +727,7 @@ unset($_SESSION['product_id_needs_varian']);
             margin-top: 0.25rem;
         }
     </style>
-    <a href="./checkout-products/checkoutFromCart.php">sdfsdfsdfsdf</a> 
-    <a href="./map address/maps.php">map</a>
-    <a href="pay.php">pay</a>
+    
     <!-- Rest of your HTML remains the same -->
     <script>
         const hamburger = document.getElementById("hamburger");

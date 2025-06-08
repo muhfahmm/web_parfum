@@ -85,9 +85,7 @@ $stmtLainnya->close();
 </head>
 <body>
 <div class="container py-4">
-    <h2 class="mb-4">Form Alamat Pengiriman Produk</h2>
-    <h3>Halo, <?= htmlspecialchars($user_name ?: 'User') ?>!</h3>
-
+    <h2 class="mb-4">Buat Alamat Baru <?= htmlspecialchars($user_name ?: 'User') ?></h2>
     <?php if ($errors): ?>
         <div class="alert alert-danger"><ul><?php foreach ($errors as $err): ?><li><?= htmlspecialchars($err) ?></li><?php endforeach ?></ul></div>
     <?php endif; ?>
