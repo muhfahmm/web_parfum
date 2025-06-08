@@ -217,6 +217,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
                 <button type="submit" class="btn btn-primary">Update Alamat</button>
                 <a href="maps.php" class="btn btn-primary">tambahkan alamat baru</a>
             </div>
+            <h3>Gunakan alamat yang lain</h3>
+<?php
+// Ambil semua alamat user, urutkan dari yang terbaru ke yang lama
+$stmtAlamat = $conn->prepare("SELECT * FROM tb_alamat_user WHERE user_id = ? ORDER BY id DESC");
+$stmtAlamat->bind_param("i", $user_id);
+$stmtAlamat->execute();
+$resultAlamat = $stmtAlamat->get_result();
+$daftarAlamat = $resultAlamat->fetch_all(MYSQLI_ASSOC);
+$stmtAlamat->close();
+?>
+
+<?php if (!empty($daftarAlamat)): ?>
+    <div class="list-group mt-3">
+        <?php foreach ($daftarAlamat as $index => $alamat): ?>
+            <div class="list-group-item">
+                <?php if ($index === 0): ?>
+                    <div class="text-success fw-bold mb-1">Alamat Terbaru</div>
+                <?php endif; ?>
+                <strong><?= htmlspecialchars($alamat['label_alamat'] ?: 'Tanpa Label') ?></strong><br>
+                <?= htmlspecialchars($alamat['nama_user']) ?><br>
+                <?= htmlspecialchars($alamat['nomor_hp']) ?><br>
+                <?= nl2br(htmlspecialchars($alamat['alamat_lengkap'])) ?>,
+                <?= htmlspecialchars($alamat['kecamatan']) ?>,
+                <?= htmlspecialchars($alamat['kota']) ?>,
+                <?= htmlspecialchars($alamat['provinsi']) ?>,
+                <?= htmlspecialchars($alamat['kode_post']) ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php else: ?>
+    <div class="alert alert-warning mt-3">Belum ada alamat yang tersimpan.</div>
+<?php endif; ?>
+
         </form>
     </div>
 
