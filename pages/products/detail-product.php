@@ -951,7 +951,7 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                 </button>
 
                 <!-- Checkout Button -->
-                <a href="../checkout-products/checkout.php?id=<?= $item['id'] ?>" class="btn btn-success w-100 py-2">
+                <a href="../checkout-products/checkout.php?id=<?= htmlspecialchars($product['id']) ?>" class="btn btn-success w-100 py-2">
                     <i class="bi bi-bag-check me-2"></i>Checkout
                 </a>
             </div>

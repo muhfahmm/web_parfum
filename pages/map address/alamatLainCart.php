@@ -8,11 +8,10 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0; // ambil id produk (untuk redirect)
-
+$cart_id = isset($_GET['cart_id']) ? (int)$_GET['cart_id'] : 0;
 $alamatList = [];
 
-// Ambil alamat user
+// Ambil alamat
 $stmt = $conn->prepare("SELECT id, label_alamat, nama_user, nomor_hp, alamat_lengkap, kota, provinsi, kecamatan, kode_post FROM tb_alamat_user WHERE user_id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -22,14 +21,14 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Proses POST
+// Proses jika pilih alamat
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alamat_id'])) {
     $_SESSION['selected_alamat_id'] = (int)$_POST['alamat_id'];
-    header("Location: ../checkout-products/checkout.php?id=" . $product_id);
+    header("Location: ../checkout-products/checkoutFromCart.php?id=" . $cart_id);
+
     exit;
 }
 ?>
-
 
 
 <!DOCTYPE html>

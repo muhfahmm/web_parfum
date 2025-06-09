@@ -145,6 +145,7 @@ $stmtLainnya->close();
             <h4>Alamat Pengiriman Terakhir</h4>
             <div class="card">
                 <div class="card-body">
+                    <?= htmlspecialchars($alamatTerakhir['id']) ?> <br>
                     <strong><?= htmlspecialchars($alamatTerakhir['label_alamat'] ?: 'Tanpa Label') ?></strong><br>
                     <?= htmlspecialchars($alamatTerakhir['nama_user']) ?> <br>
                     <?= htmlspecialchars($alamatTerakhir['nomor_hp']) ?> <br>
@@ -161,6 +162,7 @@ $stmtLainnya->close();
             <div class="list-group">
                 <?php foreach ($alamatLainnya as $alamat): ?>
                     <div class="list-group-item">
+                        <?= htmlspecialchars($alamat['id']) ?> <br>
                         <strong><?= htmlspecialchars($alamat['label_alamat'] ?: 'Tanpa Label') ?></strong><br>
                         <?= htmlspecialchars($alamat['nama_user']) ?> <br>
                         <?= htmlspecialchars($alamat['nomor_hp']) ?> <br>

@@ -1,5 +1,4 @@
 <?php
-// konfigurasi koneksi database (ubah sesuai DB kamu)
 require '../db.php';
 
 session_start();
@@ -20,16 +19,26 @@ $stmtUser->close();
 $errors = [];
 $success = '';
 
-// Ambil alamat terakhir user
+// Ambil ID dari parameter URL
+$alamat_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+// Ambil data alamat berdasarkan ID
 $alamatUser = null;
-$stmtAlamat = $conn->prepare("SELECT id, label_alamat, nama_user, email, nomor_hp, alamat_lengkap, kota, provinsi, kecamatan, kode_post FROM tb_alamat_user WHERE user_id = ? ORDER BY id DESC LIMIT 1");
-$stmtAlamat->bind_param("i", $user_id);
-$stmtAlamat->execute();
-$resultAlamat = $stmtAlamat->get_result();
-if ($resultAlamat->num_rows > 0) {
-    $alamatUser = $resultAlamat->fetch_assoc();
+if ($alamat_id > 0) {
+    $stmtAlamat = $conn->prepare("SELECT id, label_alamat, nama_user, email, nomor_hp, alamat_lengkap, kota, provinsi, kecamatan, kode_post FROM tb_alamat_user WHERE id = ? AND user_id = ?");
+    $stmtAlamat->bind_param("ii", $alamat_id, $user_id);
+    $stmtAlamat->execute();
+    $resultAlamat = $stmtAlamat->get_result();
+    
+    if ($resultAlamat->num_rows > 0) {
+        $alamatUser = $resultAlamat->fetch_assoc();
+    } else {
+        $errors[] = "Alamat tidak ditemukan atau tidak memiliki akses.";
+    }
+    $stmtAlamat->close();
+} else {
+    $errors[] = "ID alamat tidak valid.";
 }
-$stmtAlamat->close();
 
 // Jika update form dikirim
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
@@ -43,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
     $kecamatan = trim($_POST['kecamatan'] ?? '');
     $kode_post = trim($_POST['kode_post'] ?? '');
 
-    // validasi sederhana
+    // validasi input
     if ($nama_user === '') $errors[] = "Nama wajib diisi.";
     if ($email === '') {
         $errors[] = "Email wajib diisi.";
@@ -57,84 +66,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
     if ($kecamatan === '') $errors[] = "Kecamatan wajib diisi.";
     if ($kode_post === '') $errors[] = "Kode pos wajib diisi.";
 
-    if (empty($errors)) {
-        if ($alamatUser) {
-            // update alamat existing
-            $stmtUpdate = $conn->prepare("UPDATE tb_alamat_user SET label_alamat=?, nama_user=?, email=?, nomor_hp=?, alamat_lengkap=?, kota=?, provinsi=?, kecamatan=?, kode_post=? WHERE id=? AND user_id=?");
-            $stmtUpdate->bind_param(
-                "sssssssssii",
-                $label_alamat,
-                $nama_user,
-                $email,
-                $nomor_hp,
-                $alamat_lengkap,
-                $kota,
-                $provinsi,
-                $kecamatan,
-                $kode_post,
-                $alamatUser['id'],
-                $user_id
-            );
+    if (empty($errors) && $alamatUser) {
+        // update alamat existing
+        $stmtUpdate = $conn->prepare("UPDATE tb_alamat_user SET label_alamat=?, nama_user=?, email=?, nomor_hp=?, alamat_lengkap=?, kota=?, provinsi=?, kecamatan=?, kode_post=? WHERE id=? AND user_id=?");
+        $stmtUpdate->bind_param(
+            "sssssssssii",
+            $label_alamat,
+            $nama_user,
+            $email,
+            $nomor_hp,
+            $alamat_lengkap,
+            $kota,
+            $provinsi,
+            $kecamatan,
+            $kode_post,
+            $alamat_id,
+            $user_id
+        );
 
-            if ($stmtUpdate->execute()) {
-                $success = "Alamat berhasil diperbarui.";
-                // update data $alamatUser agar form tampil data terbaru
-                $alamatUser = [
-                    'id' => $alamatUser['id'],
-                    'label_alamat' => $label_alamat,
-                    'nama_user' => $nama_user,
-                    'email' => $email,
-                    'nomor_hp' => $nomor_hp,
-                    'alamat_lengkap' => $alamat_lengkap,
-                    'kota' => $kota,
-                    'provinsi' => $provinsi,
-                    'kecamatan' => $kecamatan,
-                    'kode_post' => $kode_post,
-                ];
-            } else {
-                $errors[] = "Gagal memperbarui alamat: " . $stmtUpdate->error;
-            }
-            $stmtUpdate->close();
+        if ($stmtUpdate->execute()) {
+            $success = "Alamat berhasil diperbarui.";
+            // update data $alamatUser agar form tampil data terbaru
+            $alamatUser = [
+                'id' => $alamat_id,
+                'label_alamat' => $label_alamat,
+                'nama_user' => $nama_user,
+                'email' => $email,
+                'nomor_hp' => $nomor_hp,
+                'alamat_lengkap' => $alamat_lengkap,
+                'kota' => $kota,
+                'provinsi' => $provinsi,
+                'kecamatan' => $kecamatan,
+                'kode_post' => $kode_post,
+            ];
         } else {
-            // jika belum ada alamat sama sekali, bisa insert baru (opsional)
-            $stmtInsert = $conn->prepare("INSERT INTO tb_alamat_user (user_id, label_alamat, nama_user, email, nomor_hp, alamat_lengkap, kota, provinsi, kecamatan, kode_post) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmtInsert->bind_param("isssssssss", $user_id, $label_alamat, $nama_user, $email, $nomor_hp, $alamat_lengkap, $kota, $provinsi, $kecamatan, $kode_post);
-            if ($stmtInsert->execute()) {
-                $success = "Alamat berhasil disimpan.";
-                $alamatUser = [
-                    'id' => $stmtInsert->insert_id,
-                    'label_alamat' => $label_alamat,
-                    'nama_user' => $nama_user,
-                    'email' => $email,
-                    'nomor_hp' => $nomor_hp,
-                    'alamat_lengkap' => $alamat_lengkap,
-                    'kota' => $kota,
-                    'provinsi' => $provinsi,
-                    'kecamatan' => $kecamatan,
-                    'kode_post' => $kode_post,
-                ];
-            } else {
-                $errors[] = "Gagal menyimpan alamat: " . $stmtInsert->error;
-            }
-            $stmtInsert->close();
+            $errors[] = "Gagal memperbarui alamat: " . $stmtUpdate->error;
         }
+        $stmtUpdate->close();
     }
+}
+
+// Jika belum submit update, pakai data alamat yang sudah diambil
+if ($alamatUser) {
+    $label_alamat = $alamatUser['label_alamat'];
+    $nama_user = $alamatUser['nama_user'];
+    $email = $alamatUser['email'];
+    $nomor_hp = $alamatUser['nomor_hp'];
+    $alamat_lengkap = $alamatUser['alamat_lengkap'];
+    $kota = $alamatUser['kota'];
+    $provinsi = $alamatUser['provinsi'];
+    $kecamatan = $alamatUser['kecamatan'];
+    $kode_post = $alamatUser['kode_post'];
 } else {
-    // Jika belum submit update, pakai data alamat terakhir untuk isi form
-    if ($alamatUser) {
-        $label_alamat = $alamatUser['label_alamat'];
-        $nama_user = $alamatUser['nama_user'];
-        $email = $alamatUser['email'];
-        $nomor_hp = $alamatUser['nomor_hp'];
-        $alamat_lengkap = $alamatUser['alamat_lengkap'];
-        $kota = $alamatUser['kota'];
-        $provinsi = $alamatUser['provinsi'];
-        $kecamatan = $alamatUser['kecamatan'];
-        $kode_post = $alamatUser['kode_post'];
-    } else {
-        // default kosong jika belum ada alamat sama sekali
-        $label_alamat = $nama_user = $email = $nomor_hp = $alamat_lengkap = $kota = $provinsi = $kecamatan = $kode_post = '';
-    }
+    // default kosong jika tidak ada alamat
+    $label_alamat = $nama_user = $email = $nomor_hp = $alamat_lengkap = $kota = $provinsi = $kecamatan = $kode_post = '';
 }
 ?>
 
@@ -167,58 +152,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
             <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
 
-        <form method="POST" class="row g-3 needs-validation" novalidate>
-            <input type="hidden" name="update" value="1" />
-            <div class="col-md-4">
-                <label for="label_alamat" class="form-label">Label Alamat (Contoh: Rumah, Kantor)</label>
-                <input type="text" class="form-control" id="label_alamat" name="label_alamat" value="<?= htmlspecialchars($label_alamat) ?>" />
+        <?php if ($alamatUser): ?>
+            <p>Mengedit alamat ID: <?= htmlspecialchars($alamatUser['id']) ?></p>
+            
+            <form method="POST" class="row g-3 needs-validation" novalidate>
+                <input type="hidden" name="update" value="1" />
+                <div class="col-md-4">
+                    <label for="label_alamat" class="form-label">Label Alamat (Contoh: Rumah, Kantor)</label>
+                    <input type="text" class="form-control" id="label_alamat" name="label_alamat" value="<?= htmlspecialchars($label_alamat) ?>" />
+                </div>
+                <div class="col-md-4">
+                    <label for="nama_user" class="form-label">Nama Lengkap *</label>
+                    <input type="text" class="form-control" id="nama_user" name="nama_user" value="<?= htmlspecialchars($nama_user) ?>" required />
+                    <div class="invalid-feedback">Nama lengkap wajib diisi.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="email" class="form-label">Email (Gmail) *</label>
+                    <input type="email" class="form-control" id="email" name="email" value="<?= htmlspecialchars($email) ?>" placeholder="example@gmail.com" required />
+                    <div class="invalid-feedback">Email wajib diisi dan format harus valid.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="nomor_hp" class="form-label">Nomor HP *</label>
+                    <input type="tel" pattern="[0-9+\-\s]{7,20}" class="form-control" id="nomor_hp" name="nomor_hp" value="<?= htmlspecialchars($nomor_hp) ?>" required />
+                    <div class="invalid-feedback">Nomor HP wajib diisi dan valid.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="alamat_lengkap" class="form-label">Alamat Lengkap *</label>
+                    <textarea class="form-control" id="alamat_lengkap" name="alamat_lengkap" rows="2" required><?= htmlspecialchars($alamat_lengkap) ?></textarea>
+                    <div class="invalid-feedback">Alamat lengkap wajib diisi.</div>
+                </div>
+                <div class="col-md-2">
+                    <label for="kota" class="form-label">Kota *</label>
+                    <input type="text" class="form-control" id="kota" name="kota" value="<?= htmlspecialchars($kota) ?>" required />
+                    <div class="invalid-feedback">Kota wajib diisi.</div>
+                </div>
+                <div class="col-md-2">
+                    <label for="provinsi" class="form-label">Provinsi *</label>
+                    <input type="text" class="form-control" id="provinsi" name="provinsi" value="<?= htmlspecialchars($provinsi) ?>" required />
+                    <div class="invalid-feedback">Provinsi wajib diisi.</div>
+                </div>
+                <div class="col-md-2">
+                    <label for="kecamatan" class="form-label">Kecamatan *</label>
+                    <input type="text" class="form-control" id="kecamatan" name="kecamatan" value="<?= htmlspecialchars($kecamatan) ?>" required />
+                    <div class="invalid-feedback">Kecamatan wajib diisi.</div>
+                </div>
+                <div class="col-md-2">
+                    <label for="kode_post" class="form-label">Kode Pos *</label>
+                    <input type="text" class="form-control" id="kode_post" name="kode_post" value="<?= htmlspecialchars($kode_post) ?>" required />
+                    <div class="invalid-feedback">Kode pos wajib diisi.</div>
+                </div>
+                <div class="col-12 mt-3">
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    <a href="tambahAlamat.php" class="btn btn-secondary">Tambahkan Alamat Baru</a>
+                    <a href="../checkout/checkoutFromCart.php" class="btn btn-outline-primary">Kembali ke Checkout</a>
+                </div>
+            </form>
+        <?php else: ?>
+            <div class="alert alert-warning">
+                Tidak dapat mengedit alamat. Silakan <a href="tambahAlamat.php" class="alert-link">tambahkan alamat baru</a> atau <a href="../checkout/checkoutFromCart.php" class="alert-link">kembali ke checkout</a>.
             </div>
-            <div class="col-md-4">
-                <label for="nama_user" class="form-label">Nama Lengkap *</label>
-                <input type="text" class="form-control" id="nama_user" name="nama_user" value="<?= htmlspecialchars($nama_user) ?>" required />
-                <div class="invalid-feedback">Nama lengkap wajib diisi.</div>
-            </div>
-            <div class="col-md-4">
-                <label for="email" class="form-label">Email (Gmail) *</label>
-                <input type="email" class="form-control" id="email" name="email" value="<?= htmlspecialchars($email) ?>" placeholder="example@gmail.com" required />
-                <div class="invalid-feedback">Email wajib diisi dan format harus valid.</div>
-            </div>
-            <div class="col-md-4">
-                <label for="nomor_hp" class="form-label">Nomor HP *</label>
-                <input type="tel" pattern="[0-9+\-\s]{7,20}" class="form-control" id="nomor_hp" name="nomor_hp" value="<?= htmlspecialchars($nomor_hp) ?>" required />
-                <div class="invalid-feedback">Nomor HP wajib diisi dan valid.</div>
-            </div>
-            <div class="col-md-6">
-                <label for="alamat_lengkap" class="form-label">Alamat Lengkap *</label>
-                <textarea class="form-control" id="alamat_lengkap" name="alamat_lengkap" rows="2" required><?= htmlspecialchars($alamat_lengkap) ?></textarea>
-                <div class="invalid-feedback">Alamat lengkap wajib diisi.</div>
-            </div>
-            <div class="col-md-2">
-                <label for="kota" class="form-label">Kota *</label>
-                <input type="text" class="form-control" id="kota" name="kota" value="<?= htmlspecialchars($kota) ?>" required />
-                <div class="invalid-feedback">Kota wajib diisi.</div>
-            </div>
-            <div class="col-md-2">
-                <label for="provinsi" class="form-label">Provinsi *</label>
-                <input type="text" class="form-control" id="provinsi" name="provinsi" value="<?= htmlspecialchars($provinsi) ?>" required />
-                <div class="invalid-feedback">Provinsi wajib diisi.</div>
-            </div>
-            <div class="col-md-2">
-                <label for="kecamatan" class="form-label">Kecamatan *</label>
-                <input type="text" class="form-control" id="kecamatan" name="kecamatan" value="<?= htmlspecialchars($kecamatan) ?>" required />
-                <div class="invalid-feedback">Kecamatan wajib diisi.</div>
-            </div>
-            <div class="col-md-2">
-                <label for="kode_post" class="form-label">Kode Pos *</label>
-                <input type="text" class="form-control" id="kode_post" name="kode_post" value="<?= htmlspecialchars($kode_post) ?>" required />
-                <div class="invalid-feedback">Kode pos wajib diisi.</div>
-            </div>
-            <div class="col-12 mt-3">
-                <button type="submit" class="btn btn-primary">Edit Alamat</button>
-                <a href="tambahAlamat.php" class="btn btn-primary">Tambahkan Alamat Baru</a>
-            </div>
-
-        </form>
+        <?php endif; ?>
     </div>
 
     <script>

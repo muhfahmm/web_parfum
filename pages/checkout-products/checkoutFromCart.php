@@ -89,10 +89,8 @@ if (!$item) {
         }
 
         #totalHarga {
-            font-size: 1.25rem;
             font-weight: bold;
             margin-top: 10px;
-            color: #28a745;
         }
     </style>
     <script>
@@ -159,9 +157,9 @@ if (!$item) {
     <div class="container py-5">
         <div class="card shadow">
             <div class="card-body">
-                <h3 class="mb-4">Checkout Produk</h3>
+                <h3>Checkout Produk</h3>
                 <form action="" method="POST" id="checkoutForm">
-                    <div class="row mb-4 align-items-center">
+                    <div class="d-flex p-3 bg-white mb-4">
                         <div class="col-md-3">
                             <img class="product-img img-fluid" src="../../admin/uploads/<?= htmlspecialchars($item['produk_foto']) ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>">
                         </div>
@@ -182,117 +180,119 @@ if (!$item) {
                             </div>
 
                             <div class="d-flex align-items-center quantity-control">
-                                <label class="me-2 mb-0">Jumlah:</label>
+                                <label class="me-1 mb-0">Jumlah:</label>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="updateQuantity(-1)">-</button>
-                                <input type="text" class="form-control mx-2" name="jumlah" id="jumlah" value="<?= intval($item['jumlah']) ?>" readonly>
+                                <input type="text" class="mx-2" name="jumlah" id="jumlah" value="<?= intval($item['jumlah']) ?>" readonly>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="updateQuantity(1)">+</button>
                             </div>
 
-                            <div id="totalHarga"></div>
+                            <div id="totalHarga" class="text-success"></div>
                         </div>
                     </div>
 
                     <!-- alamat user -- masih ada bug di pilihan alamat -->
                     <div class="user-address">
                         <?php
-                    if (!isset($_SESSION['user_id'])) {
-                        $_SESSION['user_id'] = 1; // contoh user_id sementara
-                    }
-
-                    $user_id = $_SESSION['user_id'];
-                    $user_name = '';
-
-                    // Ambil nama user
-                    $stmtUser = $conn->prepare("SELECT username FROM tb_userLogin WHERE id = ?");
-                    $stmtUser->bind_param("i", $user_id);
-                    $stmtUser->execute();
-                    $stmtUser->bind_result($user_name);
-                    $stmtUser->fetch();
-                    $stmtUser->close();
-
-                    $errors = [];
-                    $success = '';
-
-                    // Proses form tambah alamat
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $label_alamat = trim($_POST['label_alamat'] ?? '');
-                        $nama_user = trim($_POST['nama_user'] ?? '');
-                        $email = trim($_POST['email'] ?? '');
-                        $nomor_hp = trim($_POST['nomor_hp'] ?? '');
-                        $alamat_lengkap = trim($_POST['alamat_lengkap'] ?? '');
-                        $kota = trim($_POST['kota'] ?? '');
-                        $provinsi = trim($_POST['provinsi'] ?? '');
-                        $kecamatan = trim($_POST['kecamatan'] ?? '');
-                        $kode_post = trim($_POST['kode_post'] ?? '');
-
-                        // Validasi input
-                        if ($nama_user === '') $errors[] = "Nama wajib diisi.";
-                        if ($email === '') {
-                            $errors[] = "Email wajib diisi.";
-                        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                            $errors[] = "Format email tidak valid.";
+                        if (!isset($_SESSION['user_id'])) {
+                            $_SESSION['user_id'] = 1; // contoh user_id sementara
                         }
-                        if ($nomor_hp === '') $errors[] = "Nomor HP wajib diisi.";
-                        if ($alamat_lengkap === '') $errors[] = "Alamat lengkap wajib diisi.";
-                        if ($kota === '') $errors[] = "Kota wajib diisi.";
-                        if ($provinsi === '') $errors[] = "Provinsi wajib diisi.";
-                        if ($kecamatan === '') $errors[] = "Kecamatan wajib diisi.";
-                        if ($kode_post === '') $errors[] = "Kode pos wajib diisi.";
 
-                        if (empty($errors)) {
-                            $stmt = $conn->prepare("INSERT INTO tb_alamat_user (user_id, label_alamat, nama_user, email, nomor_hp, alamat_lengkap, kota, provinsi, kecamatan, kode_post) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                            $stmt->bind_param("isssssssss", $user_id, $label_alamat, $nama_user, $email, $nomor_hp, $alamat_lengkap, $kota, $provinsi, $kecamatan, $kode_post);
-                            if ($stmt->execute()) {
-                                $success = "Alamat berhasil disimpan. Silakan pilih alamat untuk digunakan.";
-                                // Jangan langsung menampilkan alamat yang baru ditambah
-                                unset($_SESSION['selected_alamat_id']);
-                            } else {
-                                $errors[] = "Gagal menyimpan alamat: " . $stmt->error;
+                        $user_id = $_SESSION['user_id'];
+                        $user_name = '';
+
+                        // Ambil nama user
+                        $stmtUser = $conn->prepare("SELECT username FROM tb_userLogin WHERE id = ?");
+                        $stmtUser->bind_param("i", $user_id);
+                        $stmtUser->execute();
+                        $stmtUser->bind_result($user_name);
+                        $stmtUser->fetch();
+                        $stmtUser->close();
+
+                        $errors = [];
+                        $success = '';
+
+                        // Proses form tambah alamat
+                        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                            $label_alamat = trim($_POST['label_alamat'] ?? '');
+                            $nama_user = trim($_POST['nama_user'] ?? '');
+                            $email = trim($_POST['email'] ?? '');
+                            $nomor_hp = trim($_POST['nomor_hp'] ?? '');
+                            $alamat_lengkap = trim($_POST['alamat_lengkap'] ?? '');
+                            $kota = trim($_POST['kota'] ?? '');
+                            $provinsi = trim($_POST['provinsi'] ?? '');
+                            $kecamatan = trim($_POST['kecamatan'] ?? '');
+                            $kode_post = trim($_POST['kode_post'] ?? '');
+
+                            // Validasi input
+                            if ($nama_user === '') $errors[] = "Nama wajib diisi.";
+                            if ($email === '') {
+                                $errors[] = "Email wajib diisi.";
+                            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                                $errors[] = "Format email tidak valid.";
                             }
-                            $stmt->close();
+                            if ($nomor_hp === '') $errors[] = "Nomor HP wajib diisi.";
+                            if ($alamat_lengkap === '') $errors[] = "Alamat lengkap wajib diisi.";
+                            if ($kota === '') $errors[] = "Kota wajib diisi.";
+                            if ($provinsi === '') $errors[] = "Provinsi wajib diisi.";
+                            if ($kecamatan === '') $errors[] = "Kecamatan wajib diisi.";
+                            if ($kode_post === '') $errors[] = "Kode pos wajib diisi.";
+
+                            if (empty($errors)) {
+                                $stmt = $conn->prepare("INSERT INTO tb_alamat_user (user_id, label_alamat, nama_user, email, nomor_hp, alamat_lengkap, kota, provinsi, kecamatan, kode_post) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                $stmt->bind_param("isssssssss", $user_id, $label_alamat, $nama_user, $email, $nomor_hp, $alamat_lengkap, $kota, $provinsi, $kecamatan, $kode_post);
+                                if ($stmt->execute()) {
+                                    $success = "Alamat berhasil disimpan. Silakan pilih alamat untuk digunakan.";
+                                    // Jangan langsung menampilkan alamat yang baru ditambah
+                                    unset($_SESSION['selected_alamat_id']);
+                                } else {
+                                    $errors[] = "Gagal menyimpan alamat: " . $stmt->error;
+                                }
+                                $stmt->close();
+                            }
                         }
-                    }
 
-                    // Ambil alamat berdasarkan pilihan user (jika sudah memilih)
-                    $alamatUser = null;
+                        // Ambil alamat berdasarkan pilihan user (jika sudah memilih)
+                        $alamatUser = null;
 
-                    if (isset($_SESSION['selected_alamat_id'])) {
-                        $selected_id = $_SESSION['selected_alamat_id'];
-                        $stmtAlamat = $conn->prepare("SELECT id, label_alamat, nama_user, nomor_hp, alamat_lengkap, kota, provinsi, kecamatan, kode_post FROM tb_alamat_user WHERE id = ? AND user_id = ?");
-                        $stmtAlamat->bind_param("ii", $selected_id, $user_id);
-                        $stmtAlamat->execute();
-                        $resultAlamat = $stmtAlamat->get_result();
-                        if ($resultAlamat->num_rows > 0) {
-                            $alamatUser = $resultAlamat->fetch_assoc();
+                        if (isset($_SESSION['selected_alamat_id'])) {
+                            $selected_id = $_SESSION['selected_alamat_id'];
+                            $stmtAlamat = $conn->prepare("SELECT id, label_alamat, nama_user, nomor_hp, alamat_lengkap, kota, provinsi, kecamatan, kode_post FROM tb_alamat_user WHERE id = ? AND user_id = ?");
+                            $stmtAlamat->bind_param("ii", $selected_id, $user_id);
+                            $stmtAlamat->execute();
+                            $resultAlamat = $stmtAlamat->get_result();
+                            if ($resultAlamat->num_rows > 0) {
+                                $alamatUser = $resultAlamat->fetch_assoc();
+                            }
+                            $stmtAlamat->close();
                         }
-                        $stmtAlamat->close();
-                    }
-                    ?>
+                        ?>
 
-                    <!-- TAMPILKAN ALAMAT JIKA SUDAH DIPILIH -->
-                    <?php if ($alamatUser): ?>
-                        <h4 class="mt-5">Alamat Pengiriman</h4>
-                        <div class="list-group">
-                            <div class="list-group-item">
-                                <strong><i class="bi bi-geo-alt"></i> <?= htmlspecialchars($alamatUser['label_alamat'] ?: 'Tanpa Label') ?></strong><br>
-                                Nama: <?= htmlspecialchars($alamatUser['nama_user']) ?><br>
-                                No. HP: <?= htmlspecialchars($alamatUser['nomor_hp']) ?><br>
-                                Alamat: <?= nl2br(htmlspecialchars($alamatUser['alamat_lengkap'])) ?>,
-                                <?= htmlspecialchars($alamatUser['kota']) ?>,
-                                <?= htmlspecialchars($alamatUser['provinsi']) ?>,
-                                Kode Pos: <?= htmlspecialchars($alamatUser['kode_post']) ?>
-                                <div class="mt-3 mb-3">
-                                    <a href="../map address/editAlamat.php?id=<?= $alamatUser['id'] ?>" class="btn btn-primary">Edit alamat</a>
+                        <!-- TAMPILKAN ALAMAT JIKA SUDAH DIPILIH -->
+                        <?php if ($alamatUser): ?>
+                            <h4 class="mt-5">Alamat Pengiriman</h4>
+                            <div class="list-group">
+                                <div class="list-group-item">
+                                    <strong><i class="bi bi-geo-alt"></i> <?= htmlspecialchars($alamatUser['label_alamat'] ?: 'Tanpa Label') ?></strong><br>
+                                    id: <?= htmlspecialchars($alamatUser['id']) ?><br>
+                                    Nama: <?= htmlspecialchars($alamatUser['nama_user']) ?><br>
+                                    No. HP: <?= htmlspecialchars($alamatUser['nomor_hp']) ?><br>
+                                    Alamat: <?= nl2br(htmlspecialchars($alamatUser['alamat_lengkap'])) ?>,
+                                    <?= htmlspecialchars($alamatUser['kota']) ?>,
+                                    <?= htmlspecialchars($alamatUser['provinsi']) ?>,
+                                    Kode Pos: <?= htmlspecialchars($alamatUser['kode_post']) ?>
+                                    <div class="mt-3 mb-3">
+                                        <a href="../map address/editAlamat.php?id=<?= $alamatUser['id'] ?>" class="btn btn-primary btn-sm">Edit alamat</a>
+                                    </div>
+                                    <a href="../map address/alamatLainCart.php?cart_id=<?= $cart_id ?>" class="btn btn-success btn-sm">Ganti alamat</a>
+                                    <br>
                                 </div>
-                                <a href="../map address/alamatLain.php?cart_id=<?= $cart_id ?>" class="btn btn-success">Ganti alamat</a>
                             </div>
-                        </div>
-                    <?php else: ?>
-                        <div class="container mt-5">
-                            <p class="text-muted">Belum ada alamat yang dipilih.</p>
-                            <a href="../map address/alamatLain.php" class="btn btn-success">Pilih alamat</a>
-                        </div>
-                    <?php endif; ?>
+                        <?php else: ?>
+                            <div class="container mt-5">
+                                <p class="text-muted">Belum ada alamat yang dipilih.</p>
+                                <a href="../map address/alamatLainCart.php" class="btn btn-success">Pilih alamat</a>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Metode Pembayaran -->
@@ -368,7 +368,6 @@ if (!$item) {
                                                 <i class="fas fa-chevron-right ms-2"></i>
                                             </button>
                                         </div>
-                                        <button class="btn btn-primary w-100">Bayar Sekarang</button>
                                     </div>
                                 </div>
                             </div>
@@ -392,23 +391,23 @@ if (!$item) {
                                                 <div id="collapseEwallet" class="collapse" aria-labelledby="headingEwallet" data-bs-parent="#paymentMethodsAccordion">
                                                     <div class="method-content pt-3">
                                                         <div class="method-option" data-method="Gopay">
-                                                            <img src="../img/e wallet/gopay.png" alt="Gopay">
+                                                            <img src="../img/pay method/e wallet/gopay.png" alt="Gopay">
                                                             <span>Gopay</span>
                                                         </div>
                                                         <div class="method-option" data-method="OVO">
-                                                            <img src="https://via.placeholder.com/40?text=OVO" alt="OVO">
+                                                            <img src="../img/pay method/e wallet/ovo.png" alt="OVO">
                                                             <span>OVO</span>
                                                         </div>
                                                         <div class="method-option" data-method="DANA">
-                                                            <img src="https://via.placeholder.com/40?text=DANA" alt="DANA">
+                                                            <img src="../img/pay method/e wallet/dana.png" alt="DANA">
                                                             <span>DANA</span>
                                                         </div>
                                                         <div class="method-option" data-method="ShopeePay">
-                                                            <img src="https://via.placeholder.com/40?text=ShopeePay" alt="ShopeePay">
+                                                            <img src="../img/pay method/e wallet/shopeepay.png" alt="ShopeePay">
                                                             <span>ShopeePay</span>
                                                         </div>
                                                         <div class="method-option" data-method="LinkAja">
-                                                            <img src="https://via.placeholder.com/40?text=LinkAja" alt="LinkAja">
+                                                            <img src="../img/pay method/e wallet/linkaja.png" alt="LinkAja">
                                                             <span>LinkAja</span>
                                                         </div>
                                                     </div>
@@ -424,35 +423,35 @@ if (!$item) {
                                                 <div id="collapseBankTransfer" class="collapse" aria-labelledby="headingBankTransfer" data-bs-parent="#paymentMethodsAccordion">
                                                     <div class="method-content pt-3">
                                                         <div class="method-option" data-method="Virtual Account BCA">
-                                                            <img src="https://via.placeholder.com/40?text=BCA" alt="BCA">
+                                                            <img src="../img/pay method/virtual account/bca.png" alt="BCA">
                                                             <span>BCA</span>
                                                         </div>
                                                         <div class="method-option" data-method="Virtual Account Mandiri">
-                                                            <img src="https://via.placeholder.com/40?text=Mandiri" alt="Mandiri">
+                                                            <img src="../img/pay method/virtual account/mandiri.webp" alt="Mandiri">
                                                             <span>Mandiri</span>
                                                         </div>
                                                         <div class="method-option" data-method="Virtual Account BNI">
-                                                            <img src="https://via.placeholder.com/40?text=BNI" alt="BNI">
+                                                            <img src="../img/pay method/virtual account/bni.jpg" alt="BNI">
                                                             <span>BNI</span>
                                                         </div>
                                                         <div class="method-option" data-method="Virtual Account BRI">
-                                                            <img src="https://via.placeholder.com/40?text=BRI" alt="BRI">
+                                                            <img src="../img/pay method/virtual account/bri.png" alt="BRI">
                                                             <span>BRI</span>
                                                         </div>
                                                         <div class="method-option" data-method="Virtual Account BSI">
-                                                            <img src="https://via.placeholder.com/40?text=BSI" alt="BSI">
+                                                            <img src="../img/pay method/virtual account/bsi.jpg" alt="BSI">
                                                             <span>BSI</span>
                                                         </div>
                                                         <div class="method-option" data-method="Virtual Account CIMB">
-                                                            <img src="https://via.placeholder.com/40?text=CIMB" alt="CIMB">
+                                                            <img src="../img/pay method/virtual account/CIMB Niaga.png" alt="CIMB">
                                                             <span>CIMB Niaga</span>
                                                         </div>
                                                         <div class="method-option" data-method="Virtual Account Muamalat">
-                                                            <img src="https://via.placeholder.com/40?text=Muamalat" alt="Muamalat">
+                                                            <img src="../img/pay method/virtual account/bank muamalat.jpg" alt="Muamalat">
                                                             <span>Bank Muamalat</span>
                                                         </div>
                                                         <div class="method-option" data-method="Virtual Account Mega">
-                                                            <img src="https://via.placeholder.com/40?text=Mega" alt="Mega">
+                                                            <img src="../img/pay method/virtual account/bank mega.png" alt="Mega">
                                                             <span>Bank Mega</span>
                                                         </div>
                                                     </div>
@@ -468,11 +467,11 @@ if (!$item) {
                                                 <div id="collapseDebitCard" class="collapse" aria-labelledby="headingDebitCard" data-bs-parent="#paymentMethodsAccordion">
                                                     <div class="method-content pt-3">
                                                         <div class="method-option" data-method="Visa">
-                                                            <img src="https://via.placeholder.com/40?text=Visa" alt="Visa">
+                                                            <img src="../img/pay method/kartu debit/visa.webp" alt="Visa">
                                                             <span>Visa</span>
                                                         </div>
                                                         <div class="method-option" data-method="Mastercard">
-                                                            <img src="https://via.placeholder.com/40?text=Mastercard" alt="Mastercard">
+                                                            <img src="../img/pay method/kartu debit/mastercard.png" alt="Mastercard">
                                                             <span>Mastercard</span>
                                                         </div>
                                                     </div>
@@ -488,11 +487,11 @@ if (!$item) {
                                                 <div id="collapsePayLater" class="collapse" aria-labelledby="headingPayLater" data-bs-parent="#paymentMethodsAccordion">
                                                     <div class="method-content pt-3">
                                                         <div class="method-option" data-method="ShopeePay Later">
-                                                            <img src="https://via.placeholder.com/40?text=SPLater" alt="ShopeePay Later">
+                                                            <img src="../img/pay method/pay later/SP later.webp" alt="ShopeePay Later">
                                                             <span>ShopeePay Later</span>
                                                         </div>
                                                         <div class="method-option" data-method="Gopay Later">
-                                                            <img src="https://via.placeholder.com/40?text=GPLater" alt="Gopay Later">
+                                                            <img src="../img/pay method/pay later/gopay later.png" alt="Gopay Later">
                                                             <span>Gopay Later</span>
                                                         </div>
                                                     </div>
@@ -508,11 +507,11 @@ if (!$item) {
                                                 <div id="collapseOffline" class="collapse" aria-labelledby="headingOffline" data-bs-parent="#paymentMethodsAccordion">
                                                     <div class="method-content pt-3">
                                                         <div class="method-option" data-method="QRIS">
-                                                            <img src="https://via.placeholder.com/40?text=QRIS" alt="QRIS">
+                                                            <img src="../img/pay method/offline pay/qris.png" alt="QRIS">
                                                             <span>QRIS</span>
                                                         </div>
                                                         <div class="method-option" data-method="Cash on Delivery">
-                                                            <img src="https://via.placeholder.com/40?text=COD" alt="Cash on Delivery">
+                                                            <img src="../img/pay method/offline pay/cash on delivery.png" alt="Cash on Delivery">
                                                             <span>Cash on Delivery</span>
                                                         </div>
                                                     </div>
@@ -528,11 +527,11 @@ if (!$item) {
                                                 <div id="collapseRetail" class="collapse" aria-labelledby="headingRetail" data-bs-parent="#paymentMethodsAccordion">
                                                     <div class="method-content pt-3">
                                                         <div class="method-option" data-method="Alfamart">
-                                                            <img src="https://via.placeholder.com/40?text=Alfamart" alt="Alfamart">
+                                                            <img src="../img/gerai offline/alfamart.webp" alt="Alfamart">
                                                             <span>Alfamart</span>
                                                         </div>
                                                         <div class="method-option" data-method="Indomaret">
-                                                            <img src="https://via.placeholder.com/40?text=Indomaret" alt="Indomaret">
+                                                            <img src="../img/gerai offline/indomaret.webp" alt="Indomaret">
                                                             <span>Indomaret</span>
                                                         </div>
                                                     </div>
