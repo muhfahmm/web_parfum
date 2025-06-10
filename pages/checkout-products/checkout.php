@@ -87,13 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
     $conn->begin_transaction();
     
     try {
-        // Insert into transaction history
+        // Insert into transaction history with address ID
         if ($has_variant) {
-            $stmt = $conn->prepare("INSERT INTO tb_historyTransactions (user_id, product_id, varian_id, harga, jumlah, date, status) VALUES (?, ?, ?, ?, ?, NOW(), 'kirim')");
-            $stmt->bind_param("iiidi", $user_id, $product_id, $variant_id, $harga, $jumlah);
+            $stmt = $conn->prepare("INSERT INTO tb_historyTransactions (user_id, product_id, varian_id, alamat_id, harga, jumlah, date, status) VALUES (?, ?, ?, ?, ?, ?, NOW(), 'kirim')");
+            $stmt->bind_param("iiidii", $user_id, $product_id, $variant_id, $selected_alamat_id, $harga, $jumlah);
         } else {
-            $stmt = $conn->prepare("INSERT INTO tb_historyTransactions (user_id, product_id, harga, jumlah, date, status) VALUES (?, ?, ?, ?, NOW(), 'kirim')");
-            $stmt->bind_param("iidi", $user_id, $product_id, $harga, $jumlah);
+            $stmt = $conn->prepare("INSERT INTO tb_historyTransactions (user_id, product_id, alamat_id, harga, jumlah, date, status) VALUES (?, ?, ?, ?, ?, NOW(), 'kirim')");
+            $stmt->bind_param("iidii", $user_id, $product_id, $selected_alamat_id, $harga, $jumlah);
         }
         $stmt->execute();
         
