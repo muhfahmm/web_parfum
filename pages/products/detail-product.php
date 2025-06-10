@@ -915,6 +915,7 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                                 ?>
                                 <option value="<?= $variant['id'] ?>" data-stock="<?= $variant_stock ?>">
                                     <?= htmlspecialchars($variant['varian']) ?> (Stok: <?= $variant_stock ?>, <?= $variant_status ?>)
+                                    <?= htmlspecialchars($variant['id']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -950,10 +951,60 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                     <i class="bi bi-cart-plus me-2"></i>Tambah ke Keranjang
                 </button>
 
-                <!-- Checkout Button -->
-                <a href="../checkout-products/checkout.php?id=<?= htmlspecialchars($product['id']) ?>" class="btn btn-success w-100 py-2">
+                <!-- Tombol Checkout -->
+                <button type="button" class="btn btn-success w-100 py-2 checkout-btn"
+                    data-product-id="<?= $product['id'] ?>"
+                    <?= !empty($variants) ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>
+                    <?= (empty($variants) && ($product['stok'] == 'habis' || $product['jumlah_stok'] <= 0)) ? 'disabled' : '' ?>>
                     <i class="bi bi-bag-check me-2"></i>Checkout
-                </a>
+                </button>
+
+                <!-- Script Checkout -->
+                <script>
+                    document.querySelector('.checkout-btn').addEventListener('click', function() {
+                        const hasVarian = this.getAttribute('data-has-varian') === 'true';
+                        const productId = this.getAttribute('data-product-id');
+                        let variantId = '';
+                        let jumlah = 1;
+
+                        if (hasVarian) {
+                            const selected = document.querySelector('#productVariant')?.value;
+                            if (!selected || selected === '') {
+                                const modal = new bootstrap.Modal(document.getElementById('modalPilihVarian'));
+                                modal.show();
+                                return;
+                            }
+                            variantId = selected;
+                        }
+
+                        jumlah = document.getElementById('jumlah')?.value || 1;
+
+                        // Tetap gunakan ?id=... untuk konsistensi
+                        let url = `../checkout-products/checkout.php?id=${productId}&jumlah=${jumlah}`;
+                        if (variantId) {
+                            url += `&variant_id=${variantId}`;
+                        }
+
+                        window.location.href = url;
+                    });
+                </script>
+                <!-- Modal jika belum memilih varian -->
+                <div class="modal fade" id="modalPilihVarian" tabindex="-1" aria-labelledby="modalPilihVarianLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content rounded-3 shadow">
+                            <div class="modal-header bg-success text-dark">
+                                <h5 class="modal-title" id="modalPilihVarianLabel">Pilih Varian</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                            </div>
+                            <div class="modal-body">
+                                Silakan pilih varian produk terlebih dahulu sebelum melanjutkan ke checkout.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- JavaScript for Variant Selection -->
@@ -1254,6 +1305,8 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
             });
         });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

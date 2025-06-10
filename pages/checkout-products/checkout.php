@@ -74,22 +74,99 @@ if (!empty($_SESSION['selected_alamat_id'])) {
                     <div class="col-md-3">
                         <img src="../../admin/uploads/<?= $product['foto_thumbnail'] ?>" class="rounded" alt="" style="height: 120px; width: 120px;">
                     </div>
+                    <?php
+                    // Ambil data produk (ganti dengan metode yang kamu gunakan, misal berdasarkan $_GET['id'])
+                    $product_id = $_GET['id'];
+                    $stmt = $conn->prepare("SELECT * FROM tb_adminProduct WHERE id = ?");
+                    $stmt->bind_param("i", $product_id);
+                    $stmt->execute();
+                    $product = $stmt->get_result()->fetch_assoc();
+
+                    // Ambil varian produk (jika ada)
+                    $varianProduk = [];
+                    $stmtVarian = $conn->prepare("SELECT * FROM tb_varian_product WHERE product_id = ?");
+                    $stmtVarian->bind_param("i", $product['id']);
+                    $stmtVarian->execute();
+                    $resultVarian = $stmtVarian->get_result();
+                    while ($row = $resultVarian->fetch_assoc()) {
+                        $varianProduk[] = $row;
+                    }
+                    ?>
+
                     <div class="col-md-3">
                         <h5><?= htmlspecialchars($product['nama_produk']) ?></h5>
-                        <div><strong>Rp<?= number_format($product['is_diskon'] ? $product['harga_diskon'] : $product['harga'], 0, ',', '.') ?></strong></div>
+                        <?php
+                        $variant_id = isset($_GET['variant_id']) ? intval($_GET['variant_id']) : 0;
+                        $variant = null;
+
+                        if ($variant_id > 0) {
+                            $variant_q = mysqli_query($conn, "SELECT * FROM tb_varian_product WHERE id = $variant_id AND product_id = $product_id");
+                            $variant = mysqli_fetch_assoc($variant_q);
+                        }
+
+                        ?>
+
+                        <?php if ($variant): ?>
+                            <p><strong>Varian:</strong> <?= htmlspecialchars($variant['varian']) ?></p>
+                            <p><strong>Stok Varian:</strong> <?= (int)$variant['stok'] ?></p>
+                        <?php endif; ?>
+                        <div>
+                            <strong>Rp<?= number_format($product['is_diskon'] ? $product['harga_diskon'] : $product['harga'], 0, ',', '.') ?></strong>
+                        </div>
+
+                        <!-- Input Jumlah -->
                         <div class="jumlah-input mt-2">
                             <label for="jumlah">Jumlah:</label>
                             <button class="btn btn-outline-secondary btn-sm" onclick="ubahJumlah(-1)">-</button>
-                            <input type="text" id="jumlah" name="jumlah" value="1" min="1" max="<?= $product['jumlah_stok'] ?>" readonly>
+                            <input type="text"
+                                id="jumlah"
+                                name="jumlah"
+                                value="1"
+                                min="1"
+                                max="<?= empty($varianProduk) ? $product['jumlah_stok'] : $varianProduk[0]['stok'] ?>"
+                                readonly>
                             <button class="btn btn-outline-secondary btn-sm" onclick="ubahJumlah(1)">+</button>
                         </div>
+
+                        <!-- Total Harga -->
                         <div class="mt-2 text-success fw-bold" id="totalHarga">
-                            Total Harga: Rp<?= number_format($product['is_diskon'] ? $product['harga_diskon'] : $product['harga'], 0, ',', '.') ?>
+                            Total Harga: Rp<?= number_format(($product['is_diskon'] ? $product['harga_diskon'] : $product['harga']), 0, ',', '.') ?>
                         </div>
                     </div>
+
+                    <!-- JavaScript -->
+                    <script>
+                        function ubahJumlah(delta) {
+                            const input = document.getElementById("jumlah");
+                            const max = parseInt(input.max);
+                            let value = parseInt(input.value) + delta;
+
+                            if (value < 1) value = 1;
+                            if (value > max) value = max;
+
+                            input.value = value;
+                            hitungTotalHarga();
+                        }
+
+                        function ubahStokLangsung(radio) {
+                            const stok = parseInt(radio.getAttribute("data-stok"));
+                            const jumlahInput = document.getElementById("jumlah");
+                            jumlahInput.max = stok;
+                            jumlahInput.value = 1;
+                            hitungTotalHarga();
+                        }
+
+                        function hitungTotalHarga() {
+                            const jumlah = parseInt(document.getElementById("jumlah").value);
+                            const harga = <?= $product['is_diskon'] ? $product['harga_diskon'] : $product['harga'] ?>;
+                            const total = jumlah * harga;
+                            document.getElementById("totalHarga").innerText = "Total Harga: Rp" + total.toLocaleString("id-ID");
+                        }
+                    </script>
+
                 </div>
 
-<!-- alamat pengiriman -->
+                <!-- alamat pengiriman -->
                 <h5>Alamat Pengiriman</h5>
                 <?php if ($alamat): ?>
                     <div class="border rounded bg-white p-3 mb-3">
@@ -109,6 +186,7 @@ if (!empty($_SESSION['selected_alamat_id'])) {
                     </div>
                 <?php else: ?>
                     <div class="alert alert-warning">Alamat belum tersedia. Silakan tambahkan alamat.</div>
+                    <a href="../map address/alamatLain.php?id=<?= $product_id ?>" class="btn btn-success btn-sm">Pilih alamat</a>
                 <?php endif; ?>
 
                 <!-- Metode Pembayaran -->
