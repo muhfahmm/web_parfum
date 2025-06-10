@@ -198,7 +198,7 @@ if (!empty($_SESSION['selected_alamat_id'])) {
 
                 <!-- button konfirmasi pesanan -->
                 <div class="mt-3">
-                    <button class="btn btn-success">Konfirmasi pesanan</button>
+                    <button class="btn btn-success">Konfirmasi esanan</button>
                 </div>
             </div>
         </div>

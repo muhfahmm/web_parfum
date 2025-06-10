@@ -53,6 +53,10 @@ if (!$item) {
     echo "Item tidak ditemukan.";
     exit;
 }
+
+// Hitung harga yang akan digunakan (diskon atau normal)
+$harga_aktif = $item['is_diskon'] ? $item['harga_diskon'] : $item['harga'];
+$total_harga = $harga_aktif * $item['jumlah'];
 ?>
 
 <!DOCTYPE html>
@@ -91,66 +95,10 @@ if (!$item) {
         #totalHarga {
             font-weight: bold;
             margin-top: 10px;
+            font-size: 1.2rem;
+            color: #28a745;
         }
     </style>
-    <script>
-        // Harga per item sesuai diskon atau tidak, di-escape agar aman di JS
-        const hargaPerItem = <?= $item['is_diskon'] ? intval($item['harga_diskon']) : intval($item['harga']) ?>;
-
-        function updateQuantity(change) {
-            const qtyInput = document.getElementById('jumlah');
-            let qty = parseInt(qtyInput.value);
-            qty += change;
-            if (qty < 1) qty = 1;
-            qtyInput.value = qty;
-
-            // Update ke total harga
-            updateTotalHarga(qty);
-
-            const cartId = <?= $item['cart_id'] ?>;
-
-            // Kirim ke server
-            const formData = new URLSearchParams();
-            formData.append("cart_id", cartId);
-            formData.append("jumlah", qty);
-
-            fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: formData.toString()
-                })
-                .then(response => response.text())
-                .then(data => {
-                    if (data !== "success") {
-                        alert("Gagal menyimpan jumlah.");
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        }
-
-        // Update teks total harga
-        function updateTotalHarga(qty) {
-            const totalHargaEl = document.getElementById('totalHarga');
-            const total = hargaPerItem * qty;
-
-            // Format angka ke format rupiah
-            const formatted = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR'
-            }).format(total);
-            totalHargaEl.textContent = `Total Harga: ${formatted}`;
-        }
-
-        // Inisialisasi saat halaman load
-        window.onload = function() {
-            const initialQty = parseInt(document.getElementById('jumlah').value);
-            updateTotalHarga(initialQty);
-        };
-    </script>
 </head>
 
 <body class="bg-light">
@@ -186,7 +134,7 @@ if (!$item) {
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="updateQuantity(1)">+</button>
                             </div>
 
-                            <div id="totalHarga" class="text-success"></div>
+                            <div id="totalHarga">Total Harga: Rp<?= number_format($total_harga, 0, ',', '.') ?></div>
                         </div>
                     </div>
 
@@ -296,328 +244,60 @@ if (!$item) {
                     </div>
 
                     <!-- Metode Pembayaran -->
-                    <div class="container mt-5">
-                        <style>
-                            .payment-method {
-                                border: 1px solid #dee2e6;
-                                border-radius: 8px;
-                                padding: 15px;
-                                margin-bottom: 15px;
-                                transition: all 0.3s;
-                            }
 
-                            .payment-method:hover {
-                                border-color: #0d6efd;
-                                background-color: #f8f9fa;
-                            }
-
-                            .payment-method .method-header {
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                cursor: pointer;
-                            }
-
-                            .payment-method .method-header.collapsed .fa-chevron-down {
-                                transform: rotate(0deg);
-                            }
-
-                            .payment-method .method-header .fa-chevron-down {
-                                transform: rotate(180deg);
-                                transition: transform 0.3s;
-                            }
-
-                            .method-option {
-                                display: flex;
-                                align-items: center;
-                                padding: 10px;
-                                border-radius: 5px;
-                                margin-bottom: 5px;
-                                cursor: pointer;
-                            }
-
-                            .method-option:hover {
-                                background-color: #f1f1f1;
-                            }
-
-                            .method-option.active {
-                                background-color: #e7f1ff;
-                            }
-
-                            .method-option img {
-                                width: 40px;
-                                margin-right: 15px;
-                            }
-
-                            .selected-method {
-                                font-weight: bold;
-                            }
-
-                            .sub-accordion .payment-method {
-                                margin-bottom: 10px;
-                            }
-                        </style>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">Metode Pembayaran</label>
-                                            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                                                <span id="selectedPaymentText">Metode pembayaran belum dipilih</span>
-                                                <i class="fas fa-chevron-right ms-2"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Modal metode pembayran -->
-                        <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h3 class="modal-title fs-5" id="paymentModalLabel">Pilih Metode Pembayaran</h3>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="accordion" id="paymentMethodsAccordion">
-                                            <!-- E-Wallet -->
-                                            <div class="payment-method">
-                                                <div class="method-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseEwallet" aria-expanded="false" aria-controls="collapseEwallet">
-                                                    <h5 class="mb-0">E-Wallet</h5>
-                                                    <i class="fas fa-chevron-down"></i>
-                                                </div>
-                                                <div id="collapseEwallet" class="collapse" aria-labelledby="headingEwallet" data-bs-parent="#paymentMethodsAccordion">
-                                                    <div class="method-content pt-3">
-                                                        <div class="method-option" data-method="Gopay">
-                                                            <img src="../img/pay method/e wallet/gopay.png" alt="Gopay">
-                                                            <span>Gopay</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="OVO">
-                                                            <img src="../img/pay method/e wallet/ovo.png" alt="OVO">
-                                                            <span>OVO</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="DANA">
-                                                            <img src="../img/pay method/e wallet/dana.png" alt="DANA">
-                                                            <span>DANA</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="ShopeePay">
-                                                            <img src="../img/pay method/e wallet/shopeepay.png" alt="ShopeePay">
-                                                            <span>ShopeePay</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="LinkAja">
-                                                            <img src="../img/pay method/e wallet/linkaja.png" alt="LinkAja">
-                                                            <span>LinkAja</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Virtual Account -->
-                                            <div class="payment-method">
-                                                <div class="method-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseBankTransfer" aria-expanded="false" aria-controls="collapseBankTransfer">
-                                                    <h5 class="mb-0">Virtual Account</h5>
-                                                    <i class="fas fa-chevron-down"></i>
-                                                </div>
-                                                <div id="collapseBankTransfer" class="collapse" aria-labelledby="headingBankTransfer" data-bs-parent="#paymentMethodsAccordion">
-                                                    <div class="method-content pt-3">
-                                                        <div class="method-option" data-method="Virtual Account BCA">
-                                                            <img src="../img/pay method/virtual account/bca.png" alt="BCA">
-                                                            <span>BCA</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Virtual Account Mandiri">
-                                                            <img src="../img/pay method/virtual account/mandiri.webp" alt="Mandiri">
-                                                            <span>Mandiri</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Virtual Account BNI">
-                                                            <img src="../img/pay method/virtual account/bni.jpg" alt="BNI">
-                                                            <span>BNI</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Virtual Account BRI">
-                                                            <img src="../img/pay method/virtual account/bri.png" alt="BRI">
-                                                            <span>BRI</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Virtual Account BSI">
-                                                            <img src="../img/pay method/virtual account/bsi.jpg" alt="BSI">
-                                                            <span>BSI</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Virtual Account CIMB">
-                                                            <img src="../img/pay method/virtual account/CIMB Niaga.png" alt="CIMB">
-                                                            <span>CIMB Niaga</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Virtual Account Muamalat">
-                                                            <img src="../img/pay method/virtual account/bank muamalat.jpg" alt="Muamalat">
-                                                            <span>Bank Muamalat</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Virtual Account Mega">
-                                                            <img src="../img/pay method/virtual account/bank mega.png" alt="Mega">
-                                                            <span>Bank Mega</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Kartu Debit -->
-                                            <div class="payment-method">
-                                                <div class="method-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseDebitCard" aria-expanded="false" aria-controls="collapseDebitCard">
-                                                    <h5 class="mb-0">Kartu Debit</h5>
-                                                    <i class="fas fa-chevron-down"></i>
-                                                </div>
-                                                <div id="collapseDebitCard" class="collapse" aria-labelledby="headingDebitCard" data-bs-parent="#paymentMethodsAccordion">
-                                                    <div class="method-content pt-3">
-                                                        <div class="method-option" data-method="Visa">
-                                                            <img src="../img/pay method/kartu debit/visa.webp" alt="Visa">
-                                                            <span>Visa</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Mastercard">
-                                                            <img src="../img/pay method/kartu debit/mastercard.png" alt="Mastercard">
-                                                            <span>Mastercard</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Pay Later -->
-                                            <div class="payment-method">
-                                                <div class="method-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapsePayLater" aria-expanded="false" aria-controls="collapsePayLater">
-                                                    <h5 class="mb-0">Pay Later</h5>
-                                                    <i class="fas fa-chevron-down"></i>
-                                                </div>
-                                                <div id="collapsePayLater" class="collapse" aria-labelledby="headingPayLater" data-bs-parent="#paymentMethodsAccordion">
-                                                    <div class="method-content pt-3">
-                                                        <div class="method-option" data-method="ShopeePay Later">
-                                                            <img src="../img/pay method/pay later/SP later.webp" alt="ShopeePay Later">
-                                                            <span>ShopeePay Later</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Gopay Later">
-                                                            <img src="../img/pay method/pay later/gopay later.png" alt="Gopay Later">
-                                                            <span>Gopay Later</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Offline -->
-                                            <div class="payment-method">
-                                                <div class="method-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseOffline" aria-expanded="false" aria-controls="collapseOffline">
-                                                    <h5 class="mb-0">Offline</h5>
-                                                    <i class="fas fa-chevron-down"></i>
-                                                </div>
-                                                <div id="collapseOffline" class="collapse" aria-labelledby="headingOffline" data-bs-parent="#paymentMethodsAccordion">
-                                                    <div class="method-content pt-3">
-                                                        <div class="method-option" data-method="QRIS">
-                                                            <img src="../img/pay method/offline pay/qris.png" alt="QRIS">
-                                                            <span>QRIS</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Cash on Delivery">
-                                                            <img src="../img/pay method/offline pay/cash on delivery.png" alt="Cash on Delivery">
-                                                            <span>Cash on Delivery</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Gerai Offline -->
-                                            <div class="payment-method">
-                                                <div class="method-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseRetail" aria-expanded="false" aria-controls="collapseRetail">
-                                                    <h5 class="mb-0">Gerai Offline</h5>
-                                                    <i class="fas fa-chevron-down"></i>
-                                                </div>
-                                                <div id="collapseRetail" class="collapse" aria-labelledby="headingRetail" data-bs-parent="#paymentMethodsAccordion">
-                                                    <div class="method-content pt-3">
-                                                        <div class="method-option" data-method="Alfamart">
-                                                            <img src="../img/gerai offline/alfamart.webp" alt="Alfamart">
-                                                            <span>Alfamart</span>
-                                                        </div>
-                                                        <div class="method-option" data-method="Indomaret">
-                                                            <img src="../img/gerai offline/indomaret.webp" alt="Indomaret">
-                                                            <span>Indomaret</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                        <button type="button" class="btn btn-primary" id="confirmPaymentMethod">Konfirmasi</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Catatan -->
-                    <div class="mb-3">
-                        <label for="catatan" class="form-label">Catatan Pembelian (Opsional)</label>
-                        <textarea name="catatan" id="catatan" class="form-control" rows="2"></textarea>
-                    </div>
-
-                    <!-- Voucher -->
-                    <div class="mb-3">
-                        <label for="voucher" class="form-label">Kode Voucher</label>
-                        <input type="text" name="voucher" id="voucher" class="form-control" placeholder="Masukkan kode voucher jika ada">
-                    </div>
-
-                    <!-- Hidden input -->
-                    <input type="hidden" name="cart_id" value="<?= $item['cart_id'] ?>">
-
-                    <div class="text-end">
-                        <button type="button" class="btn btn-success">Lanjut Bayar</button>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-success">Konfirmasi Pesanan</button>
                     </div>
                 </form>
 
                 <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        let selectedMethod = null;
+                    // Harga per item dari PHP
+                    const hargaPerItem = <?= $harga_aktif ?>;
+                    let selectedMethod = null;
 
-                        // Pilih metode pembayaran
-                        const methodOptions = document.querySelectorAll('.method-option');
-                        methodOptions.forEach(option => {
-                            option.addEventListener('click', function() {
-                                // Hapus active class dari semua opsi
-                                methodOptions.forEach(opt => opt.classList.remove('active'));
+                    // Format angka ke Rupiah
+                    function formatRupiah(angka) {
+                        return 'Rp' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                    }
 
-                                // Tambahkan active class ke opsi yang dipilih
-                                this.classList.add('active');
-                                selectedMethod = this.getAttribute('data-method');
-                            });
-                        });
+                    // Update total harga
+                    function updateTotalHarga(qty) {
+                        const total = hargaPerItem * qty;
+                        document.getElementById('totalHarga').textContent = 'Total Harga: ' + formatRupiah(total);
+                    }
 
-                        // Konfirmasi pilihan
-                        document.getElementById('confirmPaymentMethod').addEventListener('click', function() {
-                            if (selectedMethod) {
-                                document.getElementById('selectedPaymentText').textContent = selectedMethod;
-                                document.getElementById('selectedPaymentText').classList.add('selected-method');
-
-                                // Tutup modal
-                                const modal = bootstrap.Modal.getInstance(document.getElementById('paymentModal'));
-                                modal.hide();
-                            } else {
-                                alert('Silakan pilih metode pembayaran terlebih dahulu');
-                            }
-                        });
-
-                        // Reset pilihan saat modal dibuka
-                        document.getElementById('paymentModal').addEventListener('show.bs.modal', function() {
-                            methodOptions.forEach(opt => opt.classList.remove('active'));
-                            selectedMethod = null;
-                        });
-
-                        // Mencegah form dikirim
-                        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
-                            e.preventDefault();
-                            return false;
-                        });
-                    });
-
-                    // Fungsi untuk update quantity (jika diperlukan)
+                    // Fungsi untuk update quantity
                     function updateQuantity(change) {
-                        const quantityInput = document.getElementById('jumlah');
-                        let newValue = parseInt(quantityInput.value) + change;
-                        if (newValue < 1) newValue = 1;
-                        quantityInput.value = newValue;
+                        const qtyInput = document.getElementById('jumlah');
+                        let qty = parseInt(qtyInput.value);
+                        qty += change;
+
+                        // Pastikan tidak kurang dari 1
+                        if (qty < 1) qty = 1;
+
+                        qtyInput.value = qty;
+                        updateTotalHarga(qty);
+
+                        // Kirim update ke server
+                        const cartId = <?= $item['cart_id'] ?>;
+                        const formData = new FormData();
+                        formData.append('cart_id', cartId);
+                        formData.append('jumlah', qty);
+
+                        fetch(window.location.href, {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.text())
+                            .then(data => {
+                                if (data !== "success") {
+                                    console.error("Gagal menyimpan jumlah");
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
                     }
                 </script>
             </div>

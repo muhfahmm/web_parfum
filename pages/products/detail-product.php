@@ -960,35 +960,35 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                 </button>
 
                 <!-- Script Checkout -->
-<script>
-    document.querySelector('.checkout-btn').addEventListener('click', function() {
-        const hasVarian = this.getAttribute('data-has-varian') === 'true';
-        const productId = this.getAttribute('data-product-id');
-        let variantId = '';
-        let jumlah = 1;
+                <script>
+                    document.querySelector('.checkout-btn').addEventListener('click', function() {
+                        const hasVarian = this.getAttribute('data-has-varian') === 'true';
+                        const productId = this.getAttribute('data-product-id');
+                        let variantId = '';
+                        let jumlah = 1;
 
-        if (hasVarian) {
-            const selected = document.querySelector('#productVariant')?.value;
-            if (!selected || selected === '') {
-                const modal = new bootstrap.Modal(document.getElementById('modalPilihVarian'));
-                modal.show();
-                return;
-            }
-            variantId = selected;
-        }
+                        if (hasVarian) {
+                            const selected = document.querySelector('#productVariant')?.value;
+                            if (!selected || selected === '') {
+                                const modal = new bootstrap.Modal(document.getElementById('modalPilihVarian'));
+                                modal.show();
+                                return;
+                            }
+                            variantId = selected;
+                        }
 
-        // Ambil jumlah dari input yang benar
-        jumlah = document.getElementById('productQuantity')?.value || 1;
+                        // Ambil jumlah dari input yang benar
+                        jumlah = document.getElementById('productQuantity')?.value || 1;
 
-        // Bangun URL
-        let url = `../checkout-products/checkout.php?id=${productId}&jumlah=${jumlah}`;
-        if (variantId) {
-            url += `&variant_id=${variantId}`;
-        }
+                        // Bangun URL
+                        let url = `../checkout-products/checkout.php?id=${productId}&jumlah=${jumlah}`;
+                        if (variantId) {
+                            url += `&variant_id=${variantId}`;
+                        }
 
-        window.location.href = url;
-    });
-</script>
+                        window.location.href = url;
+                    });
+                </script>
 
                 <!-- Modal jika belum memilih varian -->
                 <div class="modal fade" id="modalPilihVarian" tabindex="-1" aria-labelledby="modalPilihVarianLabel" aria-hidden="true">
