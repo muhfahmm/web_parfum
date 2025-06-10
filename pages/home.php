@@ -237,7 +237,7 @@ unset($_SESSION['product_id_needs_varian']);
     </div>
 
     <!-- Navbar -->
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <nav class="navbar" role="navigation" aria-label="Main navigation"  style="position: sticky; top:0;">
         <div class="container">
             <div class="left-section">
                 <div
