@@ -359,7 +359,7 @@ unset($_SESSION['product_id_needs_varian']);
                                 <?php endforeach; ?>
                             </ul>
                             <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
-                            <a href="#" class="view-all">Lihat semua</a>
+                            <a href="../cart/cart.php" class="view-all">Lihat semua</a>
                         <?php else: ?>
                             <div class="empty-cart">Keranjang belanja kosong</div>
                         <?php endif; ?>

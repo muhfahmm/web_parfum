@@ -388,8 +388,8 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
     <div class="sidebar" id="sidebar" aria-label="Sidebar navigation">
         <button class="close-btn" onclick="toggleSidebar()" aria-label="Close sidebar">×</button>
         <ul>
-            <li><a href="#" class="menu-item">Home</a></li>
-            <li><a href="#" class="menu-item">About Us</a></li>
+            <li><a href="../home.php" class="menu-item">Home</a></li>
+            <li><a href="../web/aboutUs.php" class="menu-item">About Us</a></li>
 
             <!-- Produk Dropdown -->
             <li>
@@ -399,14 +399,14 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                 </div>
                 <div class="dropdown-content" id="produkDropdown">
                     <?php while ($row = mysqli_fetch_assoc($result)) : ?>
-                        <a href="./products/product.php?kategori=<?= urlencode($row['nama_kategori']) ?>">
+                        <a href="../products/product.php?kategori=<?= urlencode($row['nama_kategori']) ?>">
                             <?= htmlspecialchars($row['nama_kategori']) ?>
                         </a>
                     <?php endwhile; ?>
                 </div>
             </li>
 
-            <li><a href="#" class="menu-item">Keranjang</a></li>
+            <li><a href="../cart/cart.php" class="menu-item">Keranjang</a></li>
 
             <!-- Marketplace Dropdown -->
             <li>
@@ -561,7 +561,7 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                                 <?php endforeach; ?>
                             </ul>
                             <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
-                            <a href="#" class="view-all">Lihat semua</a>
+                            <a href="../cart/cart.php" class="view-all">Lihat semua</a>
                         <?php else: ?>
                             <div class="empty-cart">Keranjang belanja kosong</div>
                         <?php endif; ?>
@@ -678,8 +678,8 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                                 <span><strong>No HP:</strong> <?= htmlspecialchars($nomor_hp) ?></span>
                             </div>
                             <hr>
-                            <a href="./riwayat_pembelian.php" class="menu-item"><i class="bi bi-bag"></i> Pembelian</a>
-                            <a href="./pengaturan_akun.php" class="menu-item"><i class="bi bi-gear"></i> Pengaturan</a>
+                            <a href="../transactions/BuyingHistory.php" class="menu-item"><i class="bi bi-bag"></i> Pembelian</a>
+                            <a href="../settings/settingsAccount.php" class="menu-item"><i class="bi bi-gear"></i> Pengaturan</a>
                             <hr>
                             <a href="../logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
                         </div>
