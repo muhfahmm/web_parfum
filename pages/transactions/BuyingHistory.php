@@ -1,11 +1,11 @@
 <?php
 require '../db.php';
 
-$sql = "SELECT ht.*, ul.username, ap.nama_produk, vp.varian 
+$sql = "SELECT ht.*, ul.username, ap.nama_produk, IFNULL(vp.varian, '-') AS varian 
         FROM tb_historytransactions ht
         JOIN tb_userLogin ul ON ht.user_id = ul.id
         JOIN tb_adminProduct ap ON ht.product_id = ap.id
-        JOIN tb_varian_product vp ON ht.varian_id = vp.id
+        LEFT JOIN tb_varian_product vp ON ht.varian_id = vp.id
         ORDER BY ht.date DESC";
 
 $result = $conn->query($sql);
@@ -37,7 +37,7 @@ $result = $conn->query($sql);
     <table>
         <thead>
             <tr>
-                <th>ID</th>
+                <th>No</th>
                 <th>User</th>
                 <th>Produk</th>
                 <th>Varian</th>
@@ -49,9 +49,10 @@ $result = $conn->query($sql);
         </thead>
         <tbody>
             <?php if ($result->num_rows > 0): ?>
+                <?php $no = 1?>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
-                        <td><?= htmlspecialchars($row['id']) ?></td>
+                        <td><?= htmlspecialchars($no++) ?></td>
                         <td><?= htmlspecialchars($row['username']) ?></td>
                         <td><?= htmlspecialchars($row['nama_produk']) ?></td>
                         <td><?= htmlspecialchars($row['varian']) ?></td>
