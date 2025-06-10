@@ -1,0 +1,27 @@
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-image-container {
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 5px;
+}
+
+.product-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.product-link:hover {
+    color: inherit;
+}

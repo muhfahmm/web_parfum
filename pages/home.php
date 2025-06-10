@@ -189,40 +189,11 @@ unset($_SESSION['product_id_needs_varian']);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/sidebar.css">
-    <style>
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .product-image-container {
-            aspect-ratio: 4/3;
-            overflow: hidden;
-            border-top-left-radius: 1rem;
-            border-top-right-radius: 1rem;
-        }
-
-        .product-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            padding: 5px;
-        }
-
-        .product-link {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .product-link:hover {
-            color: inherit;
-        }
-    </style>
+    <link rel="stylesheet" href="./css/product-home.css">
     <script src="./js/sidebarDropdown.js"></script>
 </head>
 
 <body>
-
     <!-- sidebar -->
     <?php
     // Ambil data kategori dari database
@@ -365,6 +336,7 @@ unset($_SESSION['product_id_needs_varian']);
                         <?php else: ?>
                             <div class="empty-cart">Keranjang belanja kosong</div>
                         <?php endif; ?>
+                        <!-- css cart -->
                         <style>
                             .cart-item-link {
                                 display: flex;
@@ -488,6 +460,7 @@ unset($_SESSION['product_id_needs_varian']);
                             <hr>
                             <a href="logout.php" class="menu-item text-danger"><i class="bi bi-arrow-bar-left"></i> Logout</a>
                         </div>
+                        <!-- css user -->
                         <style>
                             .user-dropdown {
                                 position: relative;
@@ -613,14 +586,19 @@ unset($_SESSION['product_id_needs_varian']);
         <?php endif; ?>
     </div>
 
-    <!-- produk -->
-    <div class="row">
+    <!-- banner -->
+    <?php require './web/banner.php' ?>
+    <!-- produk terbaru -->
+
+    <!-- semua produk -->
+    <div class="row mt-5 mb-5">
         <?php
         $sql = "SELECT * FROM tb_adminProduct WHERE stok = 'tersedia'";
         $result = $conn->query($sql);
         ?>
+        <h1 class="fw-bold text-center mb-3">Produk Kami</h1>
         <?php while ($row = $result->fetch_assoc()): ?>
-            <div class="col-sm-6 col-md-3 mb-4">
+            <div class="col-6 col-sm-6 col-md-3 mb-4">
                 <div class="card product-card d-flex flex-column rounded h-100"
                     style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
 
@@ -684,6 +662,9 @@ unset($_SESSION['product_id_needs_varian']);
                     </div>
                 </div>
             </div>
+            <style>
+
+            </style>
             <!-- Modal untuk memilih varian -->
             <div id="varianModal" class="varian-modal">
                 <div class="varian-modal-content">
@@ -727,7 +708,47 @@ unset($_SESSION['product_id_needs_varian']);
             margin-top: 0.25rem;
         }
     </style>
-    
+
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <!-- Logo -->
+                <div class="col-md-2 offset-md-1 mb-3">
+                    <div class="fw-bold">Logo Makaroni</div>
+                </div>
+
+                <!-- Menu Navigasi -->
+                <div class="col-md-2 mb-3">
+                    <h5>Menu</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white text-decoration-none">Home</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Produk</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">About Us</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Blog</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Contact Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Sosial Media -->
+                <div class="col-md-3 mb-3">
+                    <h5>Social Media</h5>
+                    <a href="#" class="text-white me-3"><i class="bi bi-instagram fs-4"></i></a>
+                    <a href="#" class="text-white me-3"><i class="bi bi-tiktok fs-4"></i></a>
+                    <a href="#" class="text-white"><i class="bi bi-facebook fs-4"></i></a>
+                </div>
+
+                <!-- Marketplace -->
+                <div class="col-md-2 mb-3">
+                    <h5>Marketplace</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white text-decoration-none">Shopee</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Tokopedia</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <!-- Rest of your HTML remains the same -->
     <script>
         const hamburger = document.getElementById("hamburger");
