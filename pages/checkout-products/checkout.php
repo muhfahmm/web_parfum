@@ -317,6 +317,7 @@ $alamat = $stmt->get_result()->fetch_assoc();
                     <a href="../map address/alamatLain.php?id=<?= $product_id ?>" class="btn btn-success btn-sm">Pilih alamat</a>
                 <?php endif; ?>
 
+                <!-- pay method -->
                 <div class="container mt-5">
                     <div class="row">
                         <div class="col-md-6">
