@@ -1,17 +1,11 @@
 <?php
 session_start();
-
+require 'db.php'
 // Check if user is logged in, if not redirect to login page
 // if (!isset($_SESSION['admin_logged_in'])) {
 //     header("Location: login.php");
 //     exit();
 // }
-
-// Database connection
-$conn = mysqli_connect("localhost", "root", "", "db_makaroni");
-if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
-}
 ?>
 
 <!DOCTYPE html>
@@ -42,7 +36,6 @@ if (!$conn) {
 </head>
 
 <body>
-
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #0d6efd;">
         <div class="container-fluid">
@@ -53,8 +46,8 @@ if (!$conn) {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="kategori.php">Category</a></li>
-                    <li class="nav-item"><a class="nav-link" href="produk.php">Product</a></li>
+                    <li class="nav-item"><a class="nav-link" href="category.php">Category</a></li>
+                    <li class="nav-item"><a class="nav-link" href="product.php">Product</a></li>
                     <li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">🌞</a>

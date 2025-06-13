@@ -10,57 +10,58 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <style>
         .slider {
-    width: 100%;
-    overflow: hidden;
-    position: relative;
-}
 
-.slides {
-    display: flex;
-    transition: transform 0.6s ease-in-out;
-}
+            overflow: hidden;
+            position: relative;
+        }
 
-.slide {
-    min-width: 100%;
-    transition: 0.5s;
-}
+        .slides {
+            display: flex;
+            transition: transform 0.6s ease-in-out;
+        }
 
-.slide img {
-    width: 100%;
-    height: auto;
-    max-height: 590px;
-    border-radius: 10px;
-    object-fit: contain;
-}
+        .slide {
+            min-width: 100%;
+            transition: 0.5s;
+        }
 
-.navigation-manual {
-    position: absolute;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    bottom: 10px;
-}
+        .slide img {
+            width: 100%;
+            height: auto;
+            max-height: 590px;
+            border-radius: 10px;
+            object-fit: contain;
+        }
 
-.manual-btn {
-    border: 1px solid black;
-    padding: 4px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: 0.4s;
-}
+        .navigation-manual {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            bottom: 10px;
+        }
 
-.manual-btn:not(:last-child) {
-    margin-right: 10px;
-}
+        .manual-btn {
+            border: 1px solid black;
+            padding: 4px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.4s;
+        }
 
-.manual-btn:hover, .manual-btn.active {
-    background: red;
-}
+        .manual-btn:not(:last-child) {
+            margin-right: 10px;
+        }
+
+        .manual-btn:hover,
+        .manual-btn.active {
+            background: red;
+        }
     </style>
 </head>
 
 <body>
-    <section class="container">
+    <section class="container mt-5 mb-5 pb-3">
         <div class="slider">
             <div class="slides" id="slides">
                 <div class="slide">

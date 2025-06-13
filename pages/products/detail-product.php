@@ -9,7 +9,7 @@ $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
 if (!$product_id) {
-    header("Location: ../index.php");
+    header("Location: ../home.php");
     exit();
 }
 
@@ -193,7 +193,7 @@ $product = $product_result->fetch_assoc();
 $product_stmt->close();
 
 if (!$product) {
-    header("Location: ../index.php");
+    header("Location: ../home.php");
     exit();
 }
 
@@ -222,6 +222,7 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" href="../img/logo/icon.svg">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/sidebar.css">
     <style>
@@ -419,6 +420,16 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                     <a href="#">Shopee</a>
                 </div>
             </li>
+            <li>
+                <!-- darkmode -->
+                <link rel="stylesheet" href="../css/darkmode.css">
+                <div class="container">
+                    <div onclick="darkmode()" style="cursor: pointer;">
+                        <i class="bi bi-moon"></i> darkmode
+                    </div>
+                </div>
+                <script src="../js/darkmode.js"></script>
+            </li>
         </ul>
     </div>
     <!-- CSS sidebar -->
@@ -485,7 +496,7 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                     <span></span>
                     <span></span>
                 </div>
-                <a class="navbar-brand logo text-white" href="../home.php">Navbar</a>
+                <a class="navbar-brand logo text-white" href="../home.php"><img src="../img/logo/logo.svg" height="40px"></a>
             </div>
 
             <div class="search-bar">
@@ -740,12 +751,11 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                 <?php endif; ?>
             </div>
         </div>
+        <!-- Search bar Mobile -->
+        <div class="search-container-mobile" id="mobileSearch">
+            <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
+        </div>
     </nav>
-
-    <!-- Search bar Mobile -->
-    <div class="search-container-mobile" id="mobileSearch">
-        <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
-    </div>
 
     <!-- Product Detail Section -->
     <div class="product-detail-container">
@@ -900,12 +910,31 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
                 </div>
 
                 <!-- Product Description -->
-                <p class="product-description mb-4"><?= htmlspecialchars($product['detail']) ?></p>
+                <div class="product-detail-container bg-white p-4 rounded-3 shadow-sm"
+                    style="border: 1px solid #e9ecef; transition: all 0.3s ease;">
+                    <div class="detail-header d-flex align-items-center mb-3">
+                        <div class="icon-container me-3"
+                            style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: rgba(13, 110, 253, 0.1); border-radius: 50%;">
+                            <i class="bi bi-info-circle-fill text-primary"></i>
+                        </div>
+                        <h5 class="detail-title mb-0"
+                            style="color: #333; font-size: 1.1rem; font-weight: 600;">
+                            Detail Produk
+                        </h5>
+                    </div>
+
+                    <div class="detail-content">
+                        <div class="detail-text"
+                            style="padding: 0.75rem 0.5rem; color: #495057; line-height: 1.6; font-size: 0.95rem; border-top: 1px solid #e9ecef;">
+                            <?= nl2br(htmlspecialchars($product['detail'])) ?>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Variant Selection -->
                 <?php if (!empty($variants)): ?>
                     <div class="mb-3">
-                        <label for="productVariant" class="form-label">Varian:</label>
+                        <label for="productVariant" class="form-label title-variant">Varian:</label>
                         <select class="form-select variant-select" id="productVariant" data-product-id="<?= $product['id'] ?>">
                             <option value="">Pilih varian</option>
                             <?php foreach ($variants as $variant): ?>
@@ -924,7 +953,7 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
 
                 <!-- Quantity Control -->
                 <div class="quantity-control mb-3">
-                    <label class="form-label">Jumlah:</label>
+                    <label class="form-label quantity-product">Jumlah:</label>
                     <div class="input-group" style="max-width: 150px;">
                         <button class="btn btn-outline-secondary quantity-btn minus" type="button">-</button>
                         <input type="number" class="form-control text-center quantity-input"
@@ -1045,8 +1074,8 @@ $product_price = $product['is_diskon'] && $product['harga_diskon'] > 0 ? $produc
     <div id="varianModal" class="varian-modal">
         <div class="varian-modal-content">
             <span class="close-modal">&times;</span>
-            <h5>Pilih Varian</h5>
-            <p id="modalErrorMessage" class="text-danger"></p>
+            <h5 class="choose-variant">Pilih Varian</h5>
+            <p id="modalErrorMessage" class="text-variant"></p>
             <form id="varianForm" method="POST">
                 <input type="hidden" name="product_id" id="modalProductId">
                 <div class="mb-3">

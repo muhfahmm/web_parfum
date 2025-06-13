@@ -1,0 +1,109 @@
+body {
+    background-color: white;
+    color: black;
+}
+
+.dark {
+    background-color: #333;
+}
+
+.dark>.navbar {
+    background-color: #332D56;
+}
+.dark .hamburger span {
+    background-color: white;
+}
+
+
+/* home product */
+.dark .product-us {
+    color: white;
+}
+
+.dark .product-us-card {
+    background-color: #2c2c2c;
+}
+
+.dark .original-price {
+    color: white;
+}
+
+.dark .product-link {
+    color: white;
+}
+
+.dark .cart-button {
+    font-weight: bold;
+    color: green;
+}
+
+.dark .varian-modal-content {
+    background-color: #254D70;
+}
+
+.dark .choose-variant {
+    color: white;
+}
+.dark .text-variant {
+    color: white;
+}
+
+.dark .varian-modal-content>.text-danger {
+    color: blue;
+}
+
+/* detail-product.php */
+.dark .product-title {
+    color: white;
+}
+
+.dark .stock-value {
+    color: white;
+}
+
+.dark .stock-label {
+    color: white;
+}
+
+.quantity-product {
+    color: white;
+}
+
+.dark .title-variant {
+    color: white;
+}
+
+/* etalase toko product.php */
+.dark .showcase-title {
+    color: white;
+}
+
+.dark .product-card {
+    background-color: #2c2c2c;
+}
+
+.dark .product-title {
+    color: white;
+}
+
+.dark .discount-price {
+    color: white;
+}
+
+.dark .sidebar-etalase {
+    background-color: #0E2148;
+}
+
+.dark .sidebar-etalase .nav-link {
+    color: white;
+}
+
+.dark .sidebar {
+    background-color: #332D56;
+}
+.dark .landing-text{
+    color: white;
+}
+.landing-text {
+    color: black;
+}

@@ -232,6 +232,15 @@ $alamat = $stmt->get_result()->fetch_assoc();
     </style>
 </head>
 <body>
+        <!-- darkmode -->
+    <link rel="stylesheet" href="../css/darkmode.css">
+    <div class="container">
+        <button onclick="darkmode()" class="btn btn-primary">
+            <i class="bi bi-moon"></i> darkmode
+        </button>
+    </div>
+
+    <script src="../js/darkmode.js"></script>
     <div class="container mt-5 mb-5">
         <div class="card shadow">
             <div class="card-body">

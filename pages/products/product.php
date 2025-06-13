@@ -183,10 +183,11 @@ unset($_SESSION['product_id_needs_varian']);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Makaroni website</title>
+    <title>Produk - Noorden Website</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" href="../img/logo/icon.svg">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/sidebar.css">
     <style>
@@ -261,6 +262,15 @@ unset($_SESSION['product_id_needs_varian']);
                     <a href="#">Shopee</a>
                 </div>
             </li>
+            <li>
+                <!-- darkmode -->
+                <link rel="stylesheet" href="../css/darkmode.css">
+                <div class="container">
+                    <div onclick="darkmode()">
+                        <i class="bi bi-moon"></i> darkmode
+                    </div>
+                </div>
+            </li>
         </ul>
     </div>
 
@@ -278,7 +288,7 @@ unset($_SESSION['product_id_needs_varian']);
                     <span></span>
                     <span></span>
                 </div>
-                <a class="navbar-brand logo text-white" href="../home.php">Navbar</a>
+                <a class="navbar-brand logo text-white" href="../home.php"><img src="../img/logo/logo.svg" height="40px"></a>
             </div>
 
             <div class="search-bar">
@@ -432,12 +442,11 @@ unset($_SESSION['product_id_needs_varian']);
                 <?php endif; ?>
             </div>
         </div>
+        <!-- Search bar Mobile -->
+        <div class="search-container-mobile" id="mobileSearch">
+            <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
+        </div>
     </nav>
-
-    <!-- Search bar Mobile -->
-    <div class="search-container-mobile" id="mobileSearch">
-        <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
-    </div>
 
     <!-- cart dropdown -->
     <div class="cart-dropdown" id="cartDropdown" role="menu" aria-hidden="<?= $keep_cart_open ? 'false' : 'true' ?>">
@@ -589,7 +598,7 @@ unset($_SESSION['product_id_needs_varian']);
 
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 d-md-block sidebar-etalase collapse bg-light" id="sidebarMenu">
+            <div class="col-md-3 col-lg-2 d-md-block sidebar-etalase collapse " id="sidebarMenu">
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
                         <?php
@@ -647,54 +656,50 @@ unset($_SESSION['product_id_needs_varian']);
 
                 <!-- Konten Semua Produk -->
                 <div id="all-products" class="content-section">
-                    <h2>Semua Produk</h2>
+                    <h2 class="showcase-title">Semua Produk</h2>
                     <div class="row">
                         <?php
                         $sql = "SELECT * FROM tb_adminProduct WHERE stok = 'tersedia'";
                         $result = $conn->query($sql);
 
                         while ($row = $result->fetch_assoc()): ?>
-                            <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
-                                <div class="card product-card h-100">
-                                    <!-- Gambar produk -->
+                            <div class="col-6 col-md-4 col-lg-3 mb-3">
+                                <div class="card product-card h-100 border-0 shadow-sm">
                                     <a href="detail-product.php?id=<?= $row['id'] ?>">
-                                        <div class="product-image-container">
+                                        <div class="product-image-container ratio ratio-1x1 overflow-hidden">
                                             <img src="../../admin/uploads/<?= htmlspecialchars($row['foto_thumbnail'] ?? 'default.jpg') ?>"
-                                                class="card-img-top" alt="<?= htmlspecialchars($row['nama_produk']) ?>">
+                                                class="w-100 h-100 object-fit-contain p-1"
+                                                alt="<?= htmlspecialchars($row['nama_produk']) ?>">
                                         </div>
                                     </a>
 
-                                    <div class="card-body">
-                                        <!-- Nama produk -->
-                                        <h5 class="card-title">
-                                            <a href="detail-product.php?id=<?= $row['id'] ?>" class="text-decoration-none text-dark">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title mb-1" style="font-size: 0.9rem;">
+                                            <a href="detail-product.php?id=<?= $row['id'] ?>" class="text-decoration-none product-title">
                                                 <?= htmlspecialchars($row['nama_produk']) ?>
                                             </a>
-                                        </h5>
+                                        </h6>
 
-                                        <!-- Detail produk -->
-                                        <p class="card-text small text-muted">
+                                        <p class="card-text small text-muted mb-1" style="font-size: 0.75rem;">
                                             <?= htmlspecialchars($row['detail']) ?>
                                         </p>
 
-                                        <!-- Harga produk -->
-                                        <div class="mb-2">
+                                        <div class="mb-1">
                                             <?php if ($row['is_diskon'] && $row['harga_diskon'] > 0): ?>
-                                                <span class="original-price">Rp<?= number_format($row['harga'], 0, ',', '.') ?></span>
-                                                <span class="discounted-price">Rp<?= number_format($row['harga_diskon'], 0, ',', '.') ?></span>
+                                                <small class="discount-price text-decoration-line-through ">Rp<?= number_format($row['harga'], 0, ',', '.') ?></small><br>
+                                                <span class="text-success fw-semibold small">Rp<?= number_format($row['harga_diskon'], 0, ',', '.') ?></span>
                                             <?php else: ?>
-                                                <span class="text-success fw-bold">Rp<?= number_format($row['harga'], 0, ',', '.') ?></span>
+                                                <span class="text-success fw-semibold small">Rp<?= number_format($row['harga'], 0, ',', '.') ?></span>
                                             <?php endif; ?>
                                         </div>
 
-                                        <!-- Varian produk -->
                                         <?php
                                         $product_id = $row['id'];
                                         $varianQuery = "SELECT id, varian FROM tb_varian_product WHERE product_id = $product_id AND stok > 0";
                                         $varianResult = $conn->query($varianQuery);
                                         if ($varianResult->num_rows > 0): ?>
                                             <select class="form-select form-select-sm mb-2 varian-select" data-product-id="<?= $product_id ?>">
-                                                <option value="">Pilih varian</option>
+                                                <option value="">Varian</option>
                                                 <?php while ($v = $varianResult->fetch_assoc()): ?>
                                                     <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['varian']) ?></option>
                                                 <?php endwhile; ?>
@@ -702,8 +707,7 @@ unset($_SESSION['product_id_needs_varian']);
                                         <?php endif; ?>
                                     </div>
 
-                                    <div class="card-footer bg-white border-top-0">
-                                        <!-- Tombol keranjang -->
+                                    <div class="card-footer border-top-0 p-0">
                                         <button type="button" class="btn btn-sm btn-outline-primary w-100 add-to-cart-btn"
                                             data-product-id="<?= $product_id ?>"
                                             <?= $varianResult->num_rows > 0 ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>>
@@ -712,6 +716,7 @@ unset($_SESSION['product_id_needs_varian']);
                                     </div>
                                 </div>
                             </div>
+
                         <?php endwhile; ?>
                     </div>
                 </div>
@@ -730,23 +735,23 @@ unset($_SESSION['product_id_needs_varian']);
                     $productsResult = $stmt->get_result();
                 ?>
                     <div id="etalase<?= $etalaseCounter ?>" class="content-section" style="display: none;">
-                        <h2><?= htmlspecialchars($etalase['etalase_toko']) ?></h2>
+                        <h2 class="showcase-title"><?= htmlspecialchars($etalase['etalase_toko']) ?></h2>
                         <div class="row">
                             <?php while ($product = $productsResult->fetch_assoc()): ?>
-                                <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
-                                    <div class="card product-card h-100">
+                                <div class="col-6 col-md-4 col-lg-3 mb-3">
+                                    <div class="card product-card h-100 border-0 shadow-sm">
                                         <!-- Gambar produk -->
                                         <a href="detail-product.php?id=<?= $product['id'] ?>">
                                             <div class="product-image-container">
                                                 <img src="../../admin/uploads/<?= htmlspecialchars($product['foto_thumbnail'] ?? 'default.jpg') ?>"
-                                                    class="card-img-top" alt="<?= htmlspecialchars($product['nama_produk']) ?>">
+                                                    class="card-img-top w-100 h-100 object-fit-contain p-1" alt="<?= htmlspecialchars($product['nama_produk']) ?>">
                                             </div>
                                         </a>
 
                                         <div class="card-body">
                                             <!-- Nama produk -->
                                             <h5 class="card-title">
-                                                <a href="detail-product.php?id=<?= $product['id'] ?>" class="text-decoration-none text-dark">
+                                                <a href="detail-product.php?id=<?= $product['id'] ?>" class="text-decoration-none product-title">
                                                     <?= htmlspecialchars($product['nama_produk']) ?>
                                                 </a>
                                             </h5>
@@ -781,7 +786,7 @@ unset($_SESSION['product_id_needs_varian']);
                                             <?php endif; ?>
                                         </div>
 
-                                        <div class="card-footer bg-white border-top-0">
+                                        <div class="card-footer border-top-0 p-0">
                                             <!-- Tombol keranjang -->
                                             <button type="button" class="btn btn-sm btn-outline-primary w-100 add-to-cart-btn"
                                                 data-product-id="<?= $product_id ?>"
@@ -854,7 +859,7 @@ unset($_SESSION['product_id_needs_varian']);
                         const variantSelect = this.closest('.card').querySelector('.varian-select');
                         const variantId = variantSelect.value;
 
-                        
+
 
                         // Tambahkan ke keranjang dengan varian
                         addToCart(productId, variantId);
@@ -874,6 +879,47 @@ unset($_SESSION['product_id_needs_varian']);
             }
         </script>
     </div>
+
+    <!-- footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <!-- Logo -->
+                <div class="col-md-2 offset-md-1 mb-3">
+                    <div class="fw-bold"><img src="../img/logo/logo.svg" height="50px"></div>
+                </div>
+
+                <!-- Menu Navigasi -->
+                <div class="col-md-2 mb-3">
+                    <h5>Menu</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="home.php" class="text-white text-decoration-none">Home</a></li>
+                        <li><a href="../products/product.php" class="text-white text-decoration-none">Produk</a></li>
+                        <li><a href="../web/aboutUs.php" class="text-white text-decoration-none">About Us</a></li>
+                        <li><a href="../web/blog.php" class="text-white text-decoration-none">Blog</a></li>
+                        <li><a href="../web/contactUs.php" class="text-white text-decoration-none">Contact Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Sosial Media -->
+                <div class="col-md-3 mb-3">
+                    <h5>Social Media</h5>
+                    <a href="#" class="text-white me-3"><i class="bi bi-instagram fs-4"></i></a>
+                    <a href="#" class="text-white me-3"><i class="bi bi-tiktok fs-4"></i></a>
+                    <a href="#" class="text-white"><i class="bi bi-facebook fs-4"></i></a>
+                </div>
+
+                <!-- Marketplace -->
+                <div class="col-md-2 mb-3">
+                    <h5>Marketplace</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white text-decoration-none">Shopee</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Tokopedia</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <!-- script navbar -->
     <script>
@@ -1083,6 +1129,8 @@ unset($_SESSION['product_id_needs_varian']);
             });
         });
     </script>
+
+    <script src="../js/darkmode.js"></script>
 </body>
 
 </html>

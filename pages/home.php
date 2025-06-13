@@ -183,10 +183,11 @@ unset($_SESSION['product_id_needs_varian']);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Makaroni website</title>
+    <title>Noorden Parfum - Home</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" href="img/logo/icon.svg">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/sidebar.css">
     <link rel="stylesheet" href="./css/product-home.css">
@@ -233,11 +234,21 @@ unset($_SESSION['product_id_needs_varian']);
                     <a href="#">Shopee</a>
                 </div>
             </li>
+            <li>
+                <!-- darkmode -->
+                <link rel="stylesheet" href="css/darkmode.css">
+                <div class="container">
+                    <div onclick="darkmode()" style="cursor: pointer;">
+                        <i class="bi bi-moon"></i> darkmode
+                    </div>
+                </div>
+                <script src="js/darkmode.js"></script>
+            </li>
         </ul>
     </div>
 
     <!-- Navbar -->
-    <nav class="navbar" role="navigation" aria-label="Main navigation"  style="position: sticky; top:0;">
+    <nav class="navbar" role="navigation" aria-label="Main navigation" style="position: sticky; top:0;">
         <div class="container">
             <div class="left-section">
                 <div
@@ -250,7 +261,7 @@ unset($_SESSION['product_id_needs_varian']);
                     <span></span>
                     <span></span>
                 </div>
-                <a class="navbar-brand logo text-white" href="home.php">Navbar</a>
+                <a class="navbar-brand logo" href="home.php"><img src="img/logo/logo.svg" height="40px"></a>
             </div>
 
             <div class="search-bar">
@@ -518,12 +529,11 @@ unset($_SESSION['product_id_needs_varian']);
                 <?php endif; ?>
             </div>
         </div>
+        <!-- Search bar Mobile -->
+        <div class="search-container-mobile" id="mobileSearch">
+            <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
+        </div>
     </nav>
-
-    <!-- Search bar Mobile -->
-    <div class="search-container-mobile" id="mobileSearch">
-        <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
-    </div>
 
     <!-- Cart Dropdown Section - Modified to show both counts -->
     <div class="cart-dropdown" id="cartDropdown" role="menu" aria-hidden="<?= $keep_cart_open ? 'false' : 'true' ?>">
@@ -586,20 +596,194 @@ unset($_SESSION['product_id_needs_varian']);
         <?php endif; ?>
     </div>
 
+    <!-- Add some CSS for the new elements -->
+    <style>
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-footer {
+            padding: 0.5rem 1rem;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-total {
+            font-weight: bold;
+            margin-top: 0.25rem;
+        }
+    </style>
+
     <!-- banner -->
     <?php require './web/banner.php' ?>
-    <!-- produk terbaru -->
 
-    <!-- semua produk -->
+    <section class="container mt-5 pt-5">
+        <!-- Bagian Pertama -->
+        <div class="mt-5">
+            <div class="container px-5 pb-5">
+                <div class="row gx-5 align-items-center">
+                    <!-- Kolom Kiri -->
+                    <div class="col-xxl-5 col-lg-6 col-md-12 slide-from-left">
+                        <div class="text-center text-xxl-start">
+                            <div class="display-3 mb-5 landing-text">
+                                <span class="text-gradient d-inline landing-text">Pengiriman Cepat</span>
+                            </div>
+                            <h1 class="display-3 fw-bolder mb-5">
+                                <span class="text-gradient d-inline landing-text">Aroma Segar Tiba di Depan Pintu Anda</span>
+                            </h1>
+                        </div>
+                    </div>
+                    <!-- Kolom Kanan -->
+                    <div class="col-xxl-7 col-lg-6 col-md-12 slide-from-right">
+                        <div class="d-flex justify-content-center mt-4 mt-xxl-0">
+                            <div class="profile bg-gradient-primary-to-secondary w-100">
+                                <img class="img-fluid rounded-5" style="max-width: 100%; height: auto;" src="./img/landing/landing.webp" alt="..." />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bagian Kedua -->
+        <div class="mt-5">
+            <div class="wrapper px-5 pb-5">
+                <div class="row gx-5 align-items-center">
+                    <!-- Kolom Kiri -->
+                    <div class="col-xxl-7 col-lg-6 col-md-12 order-2 order-xxl-1 slide-from-left">
+                        <div class="d-flex justify-content-center mt-4 mt-xxl-0">
+                            <div class="profile bg-gradient-primary-to-secondary w-100">
+                                <img class="img-fluid rounded-5" style="max-width: 100%; height: auto;" src="./img/landing/landing.webp" alt="..." />
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Kolom Kanan -->
+                    <div class="col-xxl-5 col-lg-6 col-md-12 order-1 order-xxl-2 slide-from-right">
+                        <div class="text-center text-xxl-start">
+                            <div class="display-3 mb-5 landing-text">
+                                Koleksi Eksklusif
+                            </div>
+                            <h1 class="display-3 fw-bolder mb-5 landing-text">
+                                Temukan Aroma yang Mencerminkan Kepribadian Anda
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <style>
+            /* CSS untuk animasi slow dan reversible */
+            .slide-from-left {
+                transform: translateX(-100%);
+                transition: transform 1.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+                will-change: transform;
+            }
+
+            .slide-from-right {
+                transform: translateX(100%);
+                transition: transform 1.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+                will-change: transform;
+            }
+
+            .slide-from-left.active,
+            .slide-from-right.active {
+                transform: translateX(0);
+            }
+
+            .slide-from-left.inactive {
+                transform: translateX(-100%);
+            }
+
+            .slide-from-right.inactive {
+                transform: translateX(100%);
+            }
+        </style>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const slideElements = document.querySelectorAll('.slide-from-left, .slide-from-right');
+
+                // Fungsi untuk mengecek posisi scroll
+                function handleScroll() {
+                    const windowHeight = window.innerHeight;
+                    const windowMiddle = window.scrollY + (windowHeight / 2);
+
+                    slideElements.forEach(element => {
+                        const elementRect = element.getBoundingClientRect();
+                        const elementMiddle = elementRect.top + (elementRect.height / 2);
+                        const distanceFromViewportCenter = Math.abs(windowMiddle - (elementMiddle + window.scrollY));
+
+                        // Jika elemen mendekati tengah viewport (dalam 1.5x tinggi viewport)
+                        if (distanceFromViewportCenter < windowHeight * 1.5) {
+                            element.classList.add('active');
+                            element.classList.remove('inactive');
+                        } else {
+                            element.classList.add('inactive');
+                            element.classList.remove('active');
+                        }
+                    });
+                }
+
+                // Gunakan Intersection Observer untuk performa lebih baik
+                if ('IntersectionObserver' in window) {
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            const element = entry.target;
+
+                            if (entry.isIntersecting) {
+                                element.classList.add('active');
+                                element.classList.remove('inactive');
+                            } else {
+                                // Hanya sembunyikan jika scroll melewati elemen ke bawah
+                                if (entry.boundingClientRect.top < 0) {
+                                    element.classList.add('inactive');
+                                    element.classList.remove('active');
+                                }
+                            }
+                        });
+                    }, {
+                        threshold: 0.1,
+                        rootMargin: '0px 0px -100px 0px'
+                    });
+
+                    slideElements.forEach(element => {
+                        observer.observe(element);
+                    });
+                } else {
+                    // Fallback untuk browser yang tidak support IntersectionObserver
+                    window.addEventListener('scroll', handleScroll);
+                    window.addEventListener('resize', handleScroll);
+                    handleScroll(); // Jalankan sekali saat load
+                }
+
+                // Trigger scroll handler dengan debounce untuk performa
+                let isScrolling;
+                window.addEventListener('scroll', function() {
+                    window.clearTimeout(isScrolling);
+                    isScrolling = setTimeout(handleScroll, 100);
+                }, false);
+            });
+        </script>
+    </section>
+
+    <!-- semua produk / produk kami-->
     <div class="row mt-5 mb-5">
         <?php
         $sql = "SELECT * FROM tb_adminProduct WHERE stok = 'tersedia'";
         $result = $conn->query($sql);
         ?>
-        <h1 class="fw-bold text-center mb-3">Produk Kami</h1>
+        <h1 class="fw-bold text-center mb-3 product-us">Produk Kami</h1>
         <?php while ($row = $result->fetch_assoc()): ?>
             <div class="col-6 col-sm-6 col-md-3 mb-4">
-                <div class="card product-card d-flex flex-column rounded h-100"
+                <div class="card product-card d-flex flex-column rounded h-100 product-us-card"
                     style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
 
                     <!-- Gambar produk dengan link ke detail produk -->
@@ -653,7 +837,7 @@ unset($_SESSION['product_id_needs_varian']);
 
                         <!-- Tombol keranjang -->
                         <div class="mt-auto d-grid gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary add-to-cart-btn"
+                            <button type="button" class="btn btn-sm btn-outline-secondary add-to-cart-btn cart-button"
                                 data-product-id="<?= $product_id ?>"
                                 <?= $varianResult->num_rows > 0 ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>>
                                 <i class="bi bi-cart-plus"></i> Keranjang
@@ -669,8 +853,8 @@ unset($_SESSION['product_id_needs_varian']);
             <div id="varianModal" class="varian-modal">
                 <div class="varian-modal-content">
                     <span class="close-modal">&times;</span>
-                    <h5>Pilih Varian</h5>
-                    <p id="modalErrorMessage" class="text-danger"></p>
+                    <h5 class="choose-variant">Pilih Varian</h5>
+                    <p id="modalErrorMessage" class="text-variant"></p>
                     <form id="varianForm" method="POST">
                         <input type="hidden" name="product_id" id="modalProductId">
                         <div class="mb-3">
@@ -685,47 +869,25 @@ unset($_SESSION['product_id_needs_varian']);
         <?php endwhile; ?>
     </div>
 
-    <!-- Add some CSS for the new elements -->
-    <style>
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-bottom: 1px solid #eee;
-        }
 
-        .cart-footer {
-            padding: 0.5rem 1rem;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .item-total {
-            font-weight: bold;
-            margin-top: 0.25rem;
-        }
-    </style>
-
+    <!-- footer -->
     <footer class="bg-dark text-white py-4">
         <div class="container">
             <div class="row">
                 <!-- Logo -->
                 <div class="col-md-2 offset-md-1 mb-3">
-                    <div class="fw-bold">Logo Makaroni</div>
+                    <div class="fw-bold"><img src="img/logo/logo.svg" height="50px"></div>
                 </div>
 
                 <!-- Menu Navigasi -->
                 <div class="col-md-2 mb-3">
                     <h5>Menu</h5>
                     <ul class="list-unstyled">
-                        <li><a href="#" class="text-white text-decoration-none">Home</a></li>
-                        <li><a href="#" class="text-white text-decoration-none">Produk</a></li>
-                        <li><a href="#" class="text-white text-decoration-none">About Us</a></li>
-                        <li><a href="#" class="text-white text-decoration-none">Blog</a></li>
-                        <li><a href="#" class="text-white text-decoration-none">Contact Us</a></li>
+                        <li><a href="home.php" class="text-white text-decoration-none">Home</a></li>
+                        <li><a href="./products/product.php" class="text-white text-decoration-none">Produk</a></li>
+                        <li><a href="web/aboutUs.php" class="text-white text-decoration-none">About Us</a></li>
+                        <li><a href="web/blog.php" class="text-white text-decoration-none">Blog</a></li>
+                        <li><a href="web/contactUs.php" class="text-white text-decoration-none">Contact Us</a></li>
                     </ul>
                 </div>
 

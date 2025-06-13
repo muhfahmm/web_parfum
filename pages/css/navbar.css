@@ -75,7 +75,6 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 250px;
     height: 100vh;
     background-color: #333;
     padding: 20px;
@@ -129,7 +128,13 @@ body {
     border: none;
     font-size: 14px;
 }
-
+.search-input {
+    width: 100%;
+    padding: 6px 12px;
+    border-radius: 5px;
+    border: none;
+    font-size: 14px;
+}
 /* Search Icon Mobile */
 .search-icon {
     color: white;
@@ -372,7 +377,8 @@ body {
 /* Search bar Mobile */
 .search-container-mobile {
     display: none;
-    background: #f1f1f1;
+    /* background: #f1f1f1; */
+    width: 100%;
     padding: 10px 20px;
     animation: slideDown 0.4s ease-in-out;
 }

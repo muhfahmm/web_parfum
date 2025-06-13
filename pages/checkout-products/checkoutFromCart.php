@@ -329,8 +329,16 @@ $has_payment = isset($_SESSION['selected_payment_method']);
         }
     </style>
 </head>
+    <!-- darkmode -->
+    <link rel="stylesheet" href="../css/darkmode.css">
+    <div class="container">
+        <button onclick="darkmode()" class="btn btn-primary">
+            <i class="bi bi-moon"></i> darkmode
+        </button>
+    </div>
 
-<body class="bg-light">
+    <script src="../js/darkmode.js"></script>
+<body>
     <div class="container py-5">
         <div class="card shadow">
             <div class="card-body">

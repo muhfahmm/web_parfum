@@ -187,6 +187,7 @@ unset($_SESSION['product_id_needs_varian']);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" href="../img/logo/icon.svg">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/sidebar.css">
     <style>
@@ -233,7 +234,7 @@ unset($_SESSION['product_id_needs_varian']);
     <div class="sidebar" id="sidebar" aria-label="Sidebar navigation">
         <button class="close-btn" onclick="toggleSidebar()" aria-label="Close sidebar">×</button>
         <ul>
-            <li><a href="../home.php" class="menu-item">Home</a></li>
+            <li><a href="../home.php" class="menu-item"></a></li>
             <li><a href="../web/aboutUs.php" class="menu-item">About Us</a></li>
 
             <li>
@@ -262,6 +263,15 @@ unset($_SESSION['product_id_needs_varian']);
                     <a href="#">Shopee</a>
                 </div>
             </li>
+            <li>
+                <!-- darkmode -->
+                <link rel="stylesheet" href="../css/darkmode.css">
+                <div class="container">
+                    <div onclick="darkmode()">
+                        <i class="bi bi-moon"></i> darkmode
+                    </div>
+                </div>
+            </li>
         </ul>
     </div>
 
@@ -279,7 +289,7 @@ unset($_SESSION['product_id_needs_varian']);
                     <span></span>
                     <span></span>
                 </div>
-                <a class="navbar-brand logo text-white" href="../home.php">Navbar</a>
+                <a class="navbar-brand logo text-white" href="../home.php"><img src="../img/logo/logo.svg" height="40px"></a>
             </div>
 
             <div class="search-bar">
@@ -545,12 +555,14 @@ unset($_SESSION['product_id_needs_varian']);
                 <?php endif; ?>
             </div>
         </div>
+        <!-- Search bar Mobile -->
+        <div class="search-container-mobile" id="mobileSearch">
+            <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
+        </div>
     </nav>
 
-    <!-- Search bar Mobile -->
-    <div class="search-container-mobile" id="mobileSearch">
-        <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
-    </div>
+
+    <script src="../js/darkmode.js"></script>
 
     <!-- Cart Dropdown Section - Modified to show both counts -->
     <div class="cart-dropdown" id="cartDropdown" role="menu" aria-hidden="<?= $keep_cart_open ? 'false' : 'true' ?>">
@@ -613,53 +625,52 @@ unset($_SESSION['product_id_needs_varian']);
         <?php endif; ?>
     </div>
 
+    <!-- content -->
     <div class="container">
-        <ul>
-            <?php foreach ($cart_items as $item): ?>
-                <li>
-                    <a href="../checkout-products/checkoutFromCart.php?id=<?= $item['id'] ?>" class="cart-item-link">
-                        <img src="../../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
-                        <div class="product-info">
-                            <?= htmlspecialchars($item['nama_produk']) ?>
-                            <?php if (!empty($item['varian'])): ?>
-                                <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
-                            <?php endif; ?>
-                            <div class="quantity-controls">
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <input type="hidden" name="action" value="decrease">
-                                    <button type="submit" name="update_quantity" class="quantity-btn">-</button>
-                                </form>
-                                <span class="quantity-input"><?= $item['jumlah'] ?></span>
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <input type="hidden" name="action" value="increase">
-                                    <button type="submit" name="update_quantity" class="quantity-btn">+</button>
-                                </form>
-                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                                    <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="product-price">
-                            <?php if ($item['is_diskon']): ?>
-                                <div class="price-container-navbar">
-                                    <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
-                                    <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
-                                </div>
-                            <?php else: ?>
-                                Rp<?= number_format($item['harga'], 0, ',', '.') ?>
-                            <?php endif; ?>
+        <?php foreach ($cart_items as $item): ?>
 
+            <a href="../checkout-products/checkoutFromCart.php?id=<?= $item['id'] ?>" class="cart-item-link">
+                <img src="../../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
+                <div class="product-info">
+                    <?= htmlspecialchars($item['nama_produk']) ?>
+                    <?php if (!empty($item['varian'])): ?>
+                        <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
+                    <?php endif; ?>
+                    <div class="quantity-controls">
+                        <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                            <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                            <input type="hidden" name="action" value="decrease">
+                            <button type="submit" name="update_quantity" class="quantity-btn">-</button>
+                        </form>
+                        <span class="quantity-input"><?= $item['jumlah'] ?></span>
+                        <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                            <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                            <input type="hidden" name="action" value="increase">
+                            <button type="submit" name="update_quantity" class="quantity-btn">+</button>
+                        </form>
+                        <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                            <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                            <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="product-price">
+                    <?php if ($item['is_diskon']): ?>
+                        <div class="price-container-navbar">
+                            <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
+                            <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
                         </div>
-                    </a>
-                </li>
-            <?php endforeach; ?>
-            <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
-        </ul>
+                    <?php else: ?>
+                        Rp<?= number_format($item['harga'], 0, ',', '.') ?>
+                    <?php endif; ?>
+
+                </div>
+            </a>
+
+        <?php endforeach; ?>
+        <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
     </div>
 
     <!-- Rest of your HTML remains the same -->

@@ -8,77 +8,77 @@ $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $product = null;
 $varian = [];
 if ($product_id > 0) {
-    // Ambil data produk utama
-    $stmt = $conn->prepare("SELECT * FROM tb_adminProduct WHERE id = ?");
-    $stmt->bind_param("i", $product_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $product = $result->fetch_assoc();
-    $stmt->close();
-    
-    // Ambil data varian produk
-    $stmt = $conn->prepare("SELECT * FROM tb_varian_product WHERE product_id = ?");
-    $stmt->bind_param("i", $product_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $varian[] = $row;
-    }
-    $stmt->close();
+  // Ambil data produk utama
+  $stmt = $conn->prepare("SELECT * FROM tb_adminProduct WHERE id = ?");
+  $stmt->bind_param("i", $product_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $product = $result->fetch_assoc();
+  $stmt->close();
+
+  // Ambil data varian produk
+  $stmt = $conn->prepare("SELECT * FROM tb_varian_product WHERE product_id = ?");
+  $stmt->bind_param("i", $product_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  while ($row = $result->fetch_assoc()) {
+    $varian[] = $row;
+  }
+  $stmt->close();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Ambil data dari form
-    $category_id = $_POST['category_id'];
-    $nama_produk = $_POST['nama_produk'];
-    $harga = $_POST['harga'];
-    $harga_diskon = $_POST['harga_diskon'] !== '' ? $_POST['harga_diskon'] : NULL;
-    $is_diskon = isset($_POST['is_diskon']) ? 1 : 0;
-    $etalase_toko = $_POST['etalase_toko'];
-    $detail = $_POST['detail'];
-    $jumlah_stok = $_POST['jumlah_stok'];
-    $stok = $_POST['stok'];
+  // Ambil data dari form
+  $category_id = $_POST['category_id'];
+  $nama_produk = $_POST['nama_produk'];
+  $harga = $_POST['harga'];
+  $harga_diskon = $_POST['harga_diskon'] !== '' ? $_POST['harga_diskon'] : NULL;
+  $is_diskon = isset($_POST['is_diskon']) ? 1 : 0;
+  $etalase_toko = $_POST['etalase_toko'];
+  $detail = $_POST['detail'];
+  $jumlah_stok = $_POST['jumlah_stok'];
+  $stok = $_POST['stok'];
 
-    // Handle foto thumbnail
-    $thumbnailName = $product['foto_thumbnail'];
-    if (isset($_FILES['foto_thumbnail']) && $_FILES['foto_thumbnail']['error'] === UPLOAD_ERR_OK) {
-        // Hapus foto lama jika ada
-        if ($thumbnailName && file_exists('uploads/' . $thumbnailName)) {
-            unlink('uploads/' . $thumbnailName);
-        }
-        
-        // Upload foto baru
-        $tmp_name = $_FILES['foto_thumbnail']['tmp_name'];
-        $ext = pathinfo($_FILES['foto_thumbnail']['name'], PATHINFO_EXTENSION);
-        $thumbnailName = uniqid('thumb_') . '.' . $ext;
-        move_uploaded_file($tmp_name, 'uploads/' . $thumbnailName);
+  // Handle foto thumbnail
+  $thumbnailName = $product['foto_thumbnail'];
+  if (isset($_FILES['foto_thumbnail']) && $_FILES['foto_thumbnail']['error'] === UPLOAD_ERR_OK) {
+    // Hapus foto lama jika ada
+    if ($thumbnailName && file_exists('uploads/' . $thumbnailName)) {
+      unlink('uploads/' . $thumbnailName);
     }
 
-    // Handle foto produk
-    $foto_produk_names = json_decode($product['foto_produk'], true) ?? [];
-    if (isset($_FILES['foto_produk'])) {
-        // Hapus foto lama jika ada
-        foreach ($foto_produk_names as $oldPhoto) {
-            if (file_exists('uploads/' . $oldPhoto)) {
-                unlink('uploads/' . $oldPhoto);
-            }
-        }
-        
-        // Upload foto baru
-        $foto_produk_names = [];
-        foreach ($_FILES['foto_produk']['tmp_name'] as $key => $tmp_name) {
-            if ($_FILES['foto_produk']['error'][$key] === UPLOAD_ERR_OK) {
-                $ext = pathinfo($_FILES['foto_produk']['name'][$key], PATHINFO_EXTENSION);
-                $newName = uniqid('prod_') . '.' . $ext;
-                move_uploaded_file($tmp_name, 'uploads/' . $newName);
-                $foto_produk_names[] = $newName;
-            }
-        }
-    }
-    $foto_produk_json = json_encode($foto_produk_names);
+    // Upload foto baru
+    $tmp_name = $_FILES['foto_thumbnail']['tmp_name'];
+    $ext = pathinfo($_FILES['foto_thumbnail']['name'], PATHINFO_EXTENSION);
+    $thumbnailName = uniqid('thumb_') . '.' . $ext;
+    move_uploaded_file($tmp_name, 'uploads/' . $thumbnailName);
+  }
 
-    // Update data produk
-    $stmt = $conn->prepare("UPDATE tb_adminProduct SET 
+  // Handle foto produk
+  $foto_produk_names = json_decode($product['foto_produk'], true) ?? [];
+  if (isset($_FILES['foto_produk'])) {
+    // Hapus foto lama jika ada
+    foreach ($foto_produk_names as $oldPhoto) {
+      if (file_exists('uploads/' . $oldPhoto)) {
+        unlink('uploads/' . $oldPhoto);
+      }
+    }
+
+    // Upload foto baru
+    $foto_produk_names = [];
+    foreach ($_FILES['foto_produk']['tmp_name'] as $key => $tmp_name) {
+      if ($_FILES['foto_produk']['error'][$key] === UPLOAD_ERR_OK) {
+        $ext = pathinfo($_FILES['foto_produk']['name'][$key], PATHINFO_EXTENSION);
+        $newName = uniqid('prod_') . '.' . $ext;
+        move_uploaded_file($tmp_name, 'uploads/' . $newName);
+        $foto_produk_names[] = $newName;
+      }
+    }
+  }
+  $foto_produk_json = json_encode($foto_produk_names);
+
+  // Update data produk
+  $stmt = $conn->prepare("UPDATE tb_adminProduct SET 
         category_id = ?, 
         nama_produk = ?, 
         harga = ?, 
@@ -91,71 +91,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         jumlah_stok = ?, 
         stok = ? 
         WHERE id = ?");
-    $stmt->bind_param(
-        "isdiissssisi",
-        $category_id,
-        $nama_produk,
-        $harga,
-        $harga_diskon,
-        $is_diskon,
-        $etalase_toko,
-        $thumbnailName,
-        $foto_produk_json,
-        $detail,
-        $jumlah_stok,
-        $stok,
-        $product_id
-    );
-    $stmt->execute();
-    $stmt->close();
+  $stmt->bind_param(
+    "isdiissssisi",
+    $category_id,
+    $nama_produk,
+    $harga,
+    $harga_diskon,
+    $is_diskon,
+    $etalase_toko,
+    $thumbnailName,
+    $foto_produk_json,
+    $detail,
+    $jumlah_stok,
+    $stok,
+    $product_id
+  );
+  $stmt->execute();
+  $stmt->close();
 
-    // Handle varian produk
-    // Hapus varian lama
-    $stmt = $conn->prepare("DELETE FROM tb_varian_product WHERE product_id = ?");
-    $stmt->bind_param("i", $product_id);
-    $stmt->execute();
-    $stmt->close();
+  // Handle varian produk
+  // Hapus varian lama
+  $stmt = $conn->prepare("DELETE FROM tb_varian_product WHERE product_id = ?");
+  $stmt->bind_param("i", $product_id);
+  $stmt->execute();
+  $stmt->close();
 
-    // Tambah varian baru
-    if (!empty($_POST['varian'])) {
-        $varian_arr = $_POST['varian'];
-        $stok_varian_arr = $_POST['stok_varian'];
-        $varian_id_arr = $_POST['varian_id'] ?? [];
+  // Tambah varian baru
+  if (!empty($_POST['varian'])) {
+    $varian_arr = $_POST['varian'];
+    $stok_varian_arr = $_POST['stok_varian'];
+    $varian_id_arr = $_POST['varian_id'] ?? [];
 
-        $stmtVarian = $conn->prepare("INSERT INTO tb_varian_product (id, product_id, varian, stok) VALUES (?, ?, ?, ?)");
-        for ($i = 0; $i < count($varian_arr); $i++) {
-            $nama_varian = trim($varian_arr[$i]);
-            $stok_varian = (int) $stok_varian_arr[$i];
-            $varian_id = !empty($varian_id_arr[$i]) ? $varian_id_arr[$i] : NULL;
-            
-            if ($nama_varian !== '' && $stok_varian >= 0) {
-                $stmtVarian->bind_param("iisi", $varian_id, $product_id, $nama_varian, $stok_varian);
-                $stmtVarian->execute();
-            }
-        }
-        $stmtVarian->close();
+    $stmtVarian = $conn->prepare("INSERT INTO tb_varian_product (id, product_id, varian, stok) VALUES (?, ?, ?, ?)");
+    for ($i = 0; $i < count($varian_arr); $i++) {
+      $nama_varian = trim($varian_arr[$i]);
+      $stok_varian = (int) $stok_varian_arr[$i];
+      $varian_id = !empty($varian_id_arr[$i]) ? $varian_id_arr[$i] : NULL;
+
+      if ($nama_varian !== '' && $stok_varian >= 0) {
+        $stmtVarian->bind_param("iisi", $varian_id, $product_id, $nama_varian, $stok_varian);
+        $stmtVarian->execute();
+      }
     }
+    $stmtVarian->close();
+  }
 
-    echo "<div class='alert alert-success'>Produk berhasil diperbarui!</div>";
-    
-    // Refresh data produk setelah update
-    $stmt = $conn->prepare("SELECT * FROM tb_adminProduct WHERE id = ?");
-    $stmt->bind_param("i", $product_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $product = $result->fetch_assoc();
-    $stmt->close();
-    
-    // Refresh data varian
-    $varian = [];
-    $stmt = $conn->prepare("SELECT * FROM tb_varian_product WHERE product_id = ?");
-    $stmt->bind_param("i", $product_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $varian[] = $row;
-    }
-    $stmt->close();
+  echo "<div class='alert alert-success'>Produk berhasil diperbarui!</div>";
+
+  // Refresh data produk setelah update
+  $stmt = $conn->prepare("SELECT * FROM tb_adminProduct WHERE id = ?");
+  $stmt->bind_param("i", $product_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $product = $result->fetch_assoc();
+  $stmt->close();
+
+  // Refresh data varian
+  $varian = [];
+  $stmt = $conn->prepare("SELECT * FROM tb_varian_product WHERE product_id = ?");
+  $stmt->bind_param("i", $product_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  while ($row = $result->fetch_assoc()) {
+    $varian[] = $row;
+  }
+  $stmt->close();
 }
 ?>
 
@@ -173,12 +173,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       margin-bottom: 10px;
       align-items: center;
     }
+
     .preview-image {
       max-width: 100px;
       max-height: 100px;
       margin-right: 10px;
       margin-bottom: 10px;
     }
+
     .image-container {
       display: flex;
       flex-wrap: wrap;
@@ -188,9 +190,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #0d6efd;">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Dashboard Admin</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="category.php">Category</a></li>
+          <li class="nav-item"><a class="nav-link" href="product.php">Product</a></li>
+          <li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">🌞</a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#">Light</a></li>
+              <li><a class="dropdown-item" href="#">Dark</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
   <div class="container mt-5">
     <h3>Edit Produk - Kipli Makaroni</h3>
-    
+
     <?php if (!$product): ?>
       <div class="alert alert-danger">Produk tidak ditemukan</div>
     <?php else: ?>
@@ -254,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Foto Produk -->
         <div class="mb-3">
           <label class="form-label">Foto Produk (boleh lebih dari 1)</label>
-          <?php 
+          <?php
           $foto_produk = json_decode($product['foto_produk'], true) ?? [];
           if (!empty($foto_produk)): ?>
             <div class="image-container">
