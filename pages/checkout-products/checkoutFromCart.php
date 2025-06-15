@@ -209,6 +209,7 @@ $has_payment = isset($_SESSION['selected_payment_method']);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="../img/logo/icon web.svg">
     <style>
         .product-img {
             width: 120px;
@@ -332,9 +333,9 @@ $has_payment = isset($_SESSION['selected_payment_method']);
     <!-- darkmode -->
     <link rel="stylesheet" href="../css/darkmode.css">
     <div class="container">
-        <button onclick="darkmode()" class="btn btn-primary">
+        <div onclick="darkmode()" class="d-none">
             <i class="bi bi-moon"></i> darkmode
-        </button>
+        </div>
     </div>
 
     <script src="../js/darkmode.js"></script>

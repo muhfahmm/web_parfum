@@ -162,6 +162,7 @@ $alamat = $stmt->get_result()->fetch_assoc();
     <title>Checkout Produk</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="../img/logo/icon web.svg">
     <style>
         .jumlah-input {
             display: inline-flex;
@@ -235,9 +236,9 @@ $alamat = $stmt->get_result()->fetch_assoc();
         <!-- darkmode -->
     <link rel="stylesheet" href="../css/darkmode.css">
     <div class="container">
-        <button onclick="darkmode()" class="btn btn-primary">
+        <div onclick="darkmode()" class="d-none">
             <i class="bi bi-moon"></i> darkmode
-        </button>
+        </div>
     </div>
 
     <script src="../js/darkmode.js"></script>

@@ -628,7 +628,6 @@ unset($_SESSION['product_id_needs_varian']);
     <!-- content -->
     <div class="container">
         <?php foreach ($cart_items as $item): ?>
-
             <a href="../checkout-products/checkoutFromCart.php?id=<?= $item['id'] ?>" class="cart-item-link">
                 <img src="../../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
                 <div class="product-info">
@@ -668,7 +667,6 @@ unset($_SESSION['product_id_needs_varian']);
 
                 </div>
             </a>
-
         <?php endforeach; ?>
         <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
     </div>

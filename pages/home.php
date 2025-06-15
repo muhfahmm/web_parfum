@@ -187,7 +187,7 @@ unset($_SESSION['product_id_needs_varian']);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="icon" href="img/logo/icon.svg">
+    <link rel="icon" href="img/logo/icon web.svg">
     <link rel="stylesheet" href="./css/navbar.css">
     <link rel="stylesheet" href="./css/sidebar.css">
     <link rel="stylesheet" href="./css/product-home.css">
@@ -777,6 +777,60 @@ unset($_SESSION['product_id_needs_varian']);
     <!-- semua produk / produk kami-->
     <div class="row mt-5 mb-5">
         <?php
+        // Start session jika belum ada
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Handle add to cart
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
+            $product_id = $_POST['product_id'] ?? 0;
+            $varian_id = $_POST['varian_id'] ?? 0;
+
+            // Validasi
+            if ($product_id > 0) {
+                // Inisialisasi keranjang jika belum ada
+                if (!isset($_SESSION['cart'])) {
+                    $_SESSION['cart'] = [];
+                }
+
+                // Cek apakah produk sudah punya varian
+                $has_variant = false;
+                $varianQuery = "SELECT id FROM tb_varian_product WHERE product_id = $product_id AND stok > 0";
+                $varianResult = $conn->query($varianQuery);
+                if ($varianResult->num_rows > 0) {
+                    $has_variant = true;
+                }
+
+                // Validasi varian untuk produk yang punya varian
+                if ($has_variant && $varian_id <= 0) {
+                    echo "<script>alert('Silakan pilih varian produk terlebih dahulu');</script>";
+                } else {
+                    // Cek apakah produk/varian sudah ada di keranjang
+                    $found = false;
+                    foreach ($_SESSION['cart'] as &$item) {
+                        if ($item['product_id'] == $product_id && $item['varian_id'] == $varian_id) {
+                            $item['quantity'] += 1;
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    // Jika belum ada, tambahkan baru
+                    if (!$found) {
+                        $_SESSION['cart'][] = [
+                            'product_id' => $product_id,
+                            'varian_id' => $varian_id,
+                            'quantity' => 1
+                        ];
+                    }
+
+                    echo "<script>alert('Produk berhasil ditambahkan ke keranjang');</script>";
+                }
+            }
+        }
+
+        // Query produk
         $sql = "SELECT * FROM tb_adminProduct WHERE stok = 'tersedia'";
         $result = $conn->query($sql);
         ?>
@@ -786,7 +840,6 @@ unset($_SESSION['product_id_needs_varian']);
                 <div class="card product-card d-flex flex-column rounded h-100 product-us-card"
                     style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
 
-                    <!-- Gambar produk dengan link ke detail produk -->
                     <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
                         <div class="product-image-container">
                             <img src="../admin/uploads/<?= htmlspecialchars($row['foto_thumbnail'] ?? 'default.jpg') ?>"
@@ -796,7 +849,6 @@ unset($_SESSION['product_id_needs_varian']);
 
                     <!-- Konten produk -->
                     <div class="card-body d-flex flex-column p-2 flex-grow-1">
-                        <!-- Nama produk dengan link ke detail produk -->
                         <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
                             <h6 class="card-title mb-1" style="font-size: 0.95rem;">
                                 <?= htmlspecialchars($row['nama_produk']) ?>
@@ -825,50 +877,265 @@ unset($_SESSION['product_id_needs_varian']);
                         $product_id = $row['id'];
                         $varianQuery = "SELECT id, varian FROM tb_varian_product WHERE product_id = $product_id AND stok > 0";
                         $varianResult = $conn->query($varianQuery);
-                        if ($varianResult->num_rows > 0):
+                        $has_variant = $varianResult->num_rows > 0;
                         ?>
-                            <select class="form-select form-select-sm mb-2 varian-select" data-product-id="<?= $product_id ?>">
-                                <option value="">Pilih varian</option>
-                                <?php while ($v = $varianResult->fetch_assoc()): ?>
-                                    <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['varian']) ?></option>
-                                <?php endwhile; ?>
-                            </select>
-                        <?php endif; ?>
 
-                        <!-- Tombol keranjang -->
-                        <div class="mt-auto d-grid gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary add-to-cart-btn cart-button"
-                                data-product-id="<?= $product_id ?>"
-                                <?= $varianResult->num_rows > 0 ? 'data-has-varian="true"' : 'data-has-varian="false"' ?>>
-                                <i class="bi bi-cart-plus"></i> Keranjang
-                            </button>
-                        </div>
+                        <?php if ($has_variant): ?>
+                            <form method="POST" class="add-to-cart-form">
+                                <input type="hidden" name="product_id" value="<?= $product_id ?>">
+                                <select class="form-select form-select-sm mb-2 varian-select" name="varian_id" required>
+                                    <option value="">Pilih varian</option>
+                                    <?php while ($v = $varianResult->fetch_assoc()): ?>
+                                        <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['varian']) ?></option>
+                                    <?php endwhile; ?>
+                                </select>
+                                <div class="mt-auto d-grid gap-2">
+                                    <button type="submit" name="add_to_cart" class="btn btn-sm btn-outline-secondary cart-button">
+                                        <i class="bi bi-cart-plus"></i> Keranjang
+                                    </button>
+                                </div>
+                            </form>
+                        <?php else: ?>
+                            <form method="POST" class="add-to-cart-form">
+                                <input type="hidden" name="product_id" value="<?= $product_id ?>">
+                                <input type="hidden" name="varian_id" value="0">
+                                <div class="mt-auto d-grid gap-2">
+                                    <button type="submit" name="add_to_cart" class="btn btn-sm btn-outline-secondary cart-button">
+                                        <i class="bi bi-cart-plus"></i> Keranjang
+                                    </button>
+                                </div>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
-            <style>
-
-            </style>
-            <!-- Modal untuk memilih varian -->
-            <div id="varianModal" class="varian-modal">
-                <div class="varian-modal-content">
-                    <span class="close-modal">&times;</span>
-                    <h5 class="choose-variant">Pilih Varian</h5>
-                    <p id="modalErrorMessage" class="text-variant"></p>
-                    <form id="varianForm" method="POST">
-                        <input type="hidden" name="product_id" id="modalProductId">
-                        <div class="mb-3">
-                            <select class="form-select" name="varian_id" id="modalVarianSelect" required>
-                                <option value="">Pilih varian</option>
-                            </select>
-                        </div>
-                        <button type="submit" name="add_to_cart" class="btn btn-primary">Tambahkan ke Keranjang</button>
-                    </form>
-                </div>
-            </div>
         <?php endwhile; ?>
+        <script>
+            // JavaScript untuk validasi sebelum submit form
+            document.addEventListener('DOMContentLoaded', function() {
+                const forms = document.querySelectorAll('.add-to-cart-form');
+
+                forms.forEach(form => {
+                    form.addEventListener('submit', function(e) {
+                        const select = form.querySelector('.varian-select');
+
+                        // Jika ada select varian dan belum dipilih
+                        if (select && select.value === "") {
+                            e.preventDefault();
+                            alert('Silakan pilih varian produk terlebih dahulu');
+                            select.focus();
+                        }
+                    });
+                });
+            });
+        </script>
     </div>
 
+    <!-- kategori pria & wanita -->
+    <div class="row mt-5 mb-5">
+        <?php
+        // Start session jika belum ada
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Handle add to cart (tetap sama seperti sebelumnya)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
+            $product_id = $_POST['product_id'] ?? 0;
+            $varian_id = $_POST['varian_id'] ?? 0;
+
+            if ($product_id > 0) {
+                if (!isset($_SESSION['cart'])) {
+                    $_SESSION['cart'] = [];
+                }
+
+                $has_variant = false;
+                $varianQuery = "SELECT id FROM tb_varian_product WHERE product_id = $product_id AND stok > 0";
+                $varianResult = $conn->query($varianQuery);
+                if ($varianResult->num_rows > 0) {
+                    $has_variant = true;
+                }
+
+                if ($has_variant && $varian_id <= 0) {
+                    echo "<script>alert('Silakan pilih varian produk terlebih dahulu');</script>";
+                } else {
+                    $found = false;
+                    foreach ($_SESSION['cart'] as &$item) {
+                        if ($item['product_id'] == $product_id && $item['varian_id'] == $varian_id) {
+                            $item['quantity'] += 1;
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    if (!$found) {
+                        $_SESSION['cart'][] = [
+                            'product_id' => $product_id,
+                            'varian_id' => $varian_id,
+                            'quantity' => 1
+                        ];
+                    }
+
+                    echo "<script>alert('Produk berhasil ditambahkan ke keranjang');</script>";
+                }
+            }
+        }
+
+        // Query kategori pria dan wanita
+        $categories = ['Pria', 'Wanita'];
+
+        foreach ($categories as $category) {
+            // Query produk berdasarkan kategori
+            $sql = "SELECT p.* FROM tb_adminProduct p 
+                JOIN tb_adminCategory c ON p.category_id = c.id 
+                WHERE p.stok = 'tersedia' AND c.nama_kategori = '$category'";
+            $result = $conn->query($sql);
+
+            if ($result->num_rows > 0) {
+                echo "<h1 class='fw-bold text-center mb-3 product-us'>Produk $category</h1>";
+
+                // Mulai container carousel
+                echo '<div class="position-relative mb-4">';
+                echo '<div class="d-flex align-items-center">';
+
+                // Tombol navigasi kiri
+                echo '<button class="btn btn-link text-dark carousel-control-prev me-2" type="button" data-bs-target="#carousel-' . strtolower($category) . '" data-bs-slide="prev" style="z-index: 1;">';
+                echo '<span class="carousel-control-prev-icon" aria-hidden="true"></span>';
+                echo '<span class="visually-hidden">Previous</span>';
+                echo '</button>';
+
+                // Container produk scrollable
+                echo '<div class="overflow-hidden flex-grow-1">';
+                echo '<div id="carousel-' . strtolower($category) . '" class="carousel slide" data-bs-ride="false" data-bs-interval="false">';
+                echo '<div class="carousel-inner">';
+
+                // Bagi produk menjadi kelompok 4
+                $products = [];
+                while ($row = $result->fetch_assoc()) {
+                    $products[] = $row;
+                }
+
+                $chunks = array_chunk($products, 4);
+                $active = 'active';
+
+                foreach ($chunks as $chunk) {
+                    echo '<div class="carousel-item ' . $active . '">';
+                    echo '<div class="row flex-nowrap">'; // Menggunakan row flex-nowrap
+
+                    foreach ($chunk as $row) {
+        ?>
+                        <div class="col-6 col-sm-6 col-md-3 mb-4">
+                            <div class="card product-card d-flex flex-column rounded h-100 product-us-card"
+                                style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
+
+                                <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
+                                    <div class="product-image-container">
+                                        <img src="../admin/uploads/<?= htmlspecialchars($row['foto_thumbnail'] ?? 'default.jpg') ?>"
+                                            alt="Produk" class="product-image">
+                                    </div>
+                                </a>
+
+                                <div class="card-body d-flex flex-column p-2 flex-grow-1">
+                                    <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
+                                        <h6 class="card-title mb-1" style="font-size: 0.95rem;">
+                                            <?= htmlspecialchars($row['nama_produk']) ?>
+                                        </h6>
+                                        <p class="card-text mb-2" style="font-size: 0.85rem;">
+                                            <?= htmlspecialchars($row['detail']) ?>
+                                        </p>
+                                    </a>
+
+                                    <div class="mb-2">
+                                        <?php if ($row['is_diskon'] && $row['harga_diskon'] > 0): ?>
+                                            <div class="price-container">
+                                                <span class="original-price">Rp<?= number_format($row['harga'], 0, ',', '.') ?></span>
+                                                <span class="discounted-price">Rp<?= number_format($row['harga_diskon'], 0, ',', '.') ?></span>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-success" style="font-size: 0.9rem; font-weight: bold;">
+                                                Rp<?= number_format($row['harga'], 0, ',', '.') ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <?php
+                                    $product_id = $row['id'];
+                                    $varianQuery = "SELECT id, varian FROM tb_varian_product WHERE product_id = $product_id AND stok > 0";
+                                    $varianResult = $conn->query($varianQuery);
+                                    $has_variant = $varianResult->num_rows > 0;
+                                    ?>
+
+                                    <?php if ($has_variant): ?>
+                                        <form method="POST" class="add-to-cart-form">
+                                            <input type="hidden" name="product_id" value="<?= $product_id ?>">
+                                            <select class="form-select form-select-sm mb-2 varian-select" name="varian_id" required>
+                                                <option value="">Pilih varian</option>
+                                                <?php while ($v = $varianResult->fetch_assoc()): ?>
+                                                    <option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['varian']) ?></option>
+                                                <?php endwhile; ?>
+                                            </select>
+                                            <div class="mt-auto d-grid gap-2">
+                                                <button type="submit" name="add_to_cart" class="btn btn-sm btn-outline-secondary cart-button">
+                                                    <i class="bi bi-cart-plus"></i> Keranjang
+                                                </button>
+                                            </div>
+                                        </form>
+                                    <?php else: ?>
+                                        <form method="POST" class="add-to-cart-form">
+                                            <input type="hidden" name="product_id" value="<?= $product_id ?>">
+                                            <input type="hidden" name="varian_id" value="0">
+                                            <div class="mt-auto d-grid gap-2">
+                                                <button type="submit" name="add_to_cart" class="btn btn-sm btn-outline-secondary cart-button">
+                                                    <i class="bi bi-cart-plus"></i> Keranjang
+                                                </button>
+                                            </div>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+        <?php
+                    }
+
+                    echo '</div>'; // tutup row flex-nowrap
+                    echo '</div>'; // tutup carousel-item
+                    $active = '';
+                }
+
+                echo '</div>'; // tutup carousel-inner
+                echo '</div>'; // tutup carousel
+                echo '</div>'; // tutup overflow-hidden
+
+                // Tombol navigasi kanan
+                echo '<button class="btn btn-link text-dark carousel-control-next ms-2" type="button" data-bs-target="#carousel-' . strtolower($category) . '" data-bs-slide="next" style="z-index: 1;">';
+                echo '<span class="carousel-control-next-icon" aria-hidden="true"></span>';
+                echo '<span class="visually-hidden">Next</span>';
+                echo '</button>';
+
+                echo '</div>'; // tutup d-flex align-items-center
+                echo '</div>'; // tutup position-relative
+            }
+        }
+        ?>
+        <script>
+            // JavaScript untuk validasi sebelum submit form
+            document.addEventListener('DOMContentLoaded', function() {
+                const forms = document.querySelectorAll('.add-to-cart-form');
+
+                forms.forEach(form => {
+                    form.addEventListener('submit', function(e) {
+                        const select = form.querySelector('.varian-select');
+
+                        if (select && select.value === "") {
+                            e.preventDefault();
+                            alert('Silakan pilih varian produk terlebih dahulu');
+                            select.focus();
+                        }
+                    });
+                });
+            });
+        </script>
+    </div>
 
     <!-- footer -->
     <footer class="bg-dark text-white py-4">

@@ -107,3 +107,17 @@ body {
 .landing-text {
     color: black;
 }
+
+/* about us */
+.dark .about-us {
+    color: white;
+}
+.dark .about-section-title {
+    color: white;
+}
+.dark .typing-text-filosofi {
+    color: white;
+}
+.dark .visi-misi-list li {
+    color: white;
+}

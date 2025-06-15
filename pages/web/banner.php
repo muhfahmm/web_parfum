@@ -65,19 +65,16 @@
         <div class="slider">
             <div class="slides" id="slides">
                 <div class="slide">
-                    <a href=""><img src="./img/imgslider/banner1.png" alt="Slide 1"></a>
+                    <a href=""><img src="./img/imgslider/banner 1.png" alt="Slide 1"></a>
                 </div>
                 <div class="slide">
-                    <a href=""><img src="./img/imgslider/banner2.png" alt="Slide 2"></a>
+                    <a href=""><img src="./img/imgslider/banner 2.png" alt="Slide 2"></a>
                 </div>
                 <div class="slide">
-                    <a href=""><img src="./img/imgslider/banner3.jpg" alt="Slide 3"></a>
+                    <a href=""><img src="./img/imgslider/banner 3.png" alt="Slide 3"></a>
                 </div>
                 <div class="slide">
-                    <a href=""><img src="./img/imgslider/banner4.jpg" alt="Slide 4"></a>
-                </div>
-                <div class="slide">
-                    <a href=""><img src="./img/imgslider/banner5.jpg" alt="Slide 5"></a>
+                    <a href=""><img src="./img/imgslider/banner 4.png" alt="Slide 4"></a>
                 </div>
             </div>
             <!-- Manual Navigation -->
@@ -86,7 +83,6 @@
                 <label class="manual-btn" onclick="moveToSlide(1)"></label>
                 <label class="manual-btn" onclick="moveToSlide(2)"></label>
                 <label class="manual-btn" onclick="moveToSlide(3)"></label>
-                <label class="manual-btn" onclick="moveToSlide(4)"></label>
             </div>
         </div>
     </section>
