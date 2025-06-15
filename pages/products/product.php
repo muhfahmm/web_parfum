@@ -265,7 +265,7 @@ unset($_SESSION['product_id_needs_varian']);
             <li>
                 <!-- darkmode -->
                 <link rel="stylesheet" href="../css/darkmode.css">
-                <div class="container">
+                <div class="container" style="cursor: pointer;">
                     <div onclick="darkmode()">
                         <i class="bi bi-moon"></i> darkmode
                     </div>
@@ -275,7 +275,7 @@ unset($_SESSION['product_id_needs_varian']);
     </div>
 
     <!-- Navbar -->
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <nav class="navbar" role="navigation" aria-label="Main navigation" style="position: sticky; top:0;">
         <div class="container">
             <div class="left-section">
                 <div
@@ -507,31 +507,30 @@ unset($_SESSION['product_id_needs_varian']);
         <?php else: ?>
             <div class="empty-cart">Keranjang belanja kosong</div>
         <?php endif; ?>
+        <!-- css cart -->
+        <style>
+            .cart-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.5rem 1rem;
+                border-bottom: 1px solid #eee;
+            }
+
+            .cart-footer {
+                padding: 0.5rem 1rem;
+                border-top: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .item-total {
+                font-weight: bold;
+                margin-top: 0.25rem;
+            }
+        </style>
     </div>
-
-    <!-- css cart -->
-    <style>
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-bottom: 1px solid #eee;
-        }
-
-        .cart-footer {
-            padding: 0.5rem 1rem;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .item-total {
-            font-weight: bold;
-            margin-top: 0.25rem;
-        }
-    </style>
 
     <!-- konten -->
     <div class="container-fluid">
@@ -656,6 +655,15 @@ unset($_SESSION['product_id_needs_varian']);
 
                 <!-- Konten Semua Produk -->
                 <div id="all-products" class="content-section">
+                    <!-- breadcrumb -->
+                    <div class="container m-0">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="../home.php" class="text-decoration-none">Home</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Produk</li>
+                            </ol>
+                        </nav>
+                    </div>
                     <h2 class="showcase-title">Semua Produk</h2>
                     <div class="row">
                         <?php
@@ -735,6 +743,15 @@ unset($_SESSION['product_id_needs_varian']);
                     $productsResult = $stmt->get_result();
                 ?>
                     <div id="etalase<?= $etalaseCounter ?>" class="content-section" style="display: none;">
+                        <!-- breadcrumb -->
+                        <div class="container m-0">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="../home.php" class="text-decoration-none">Home</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">Produk</li>
+                                </ol>
+                            </nav>
+                        </div>
                         <h2 class="showcase-title"><?= htmlspecialchars($etalase['etalase_toko']) ?></h2>
                         <div class="row">
                             <?php while ($product = $productsResult->fetch_assoc()): ?>
@@ -893,7 +910,7 @@ unset($_SESSION['product_id_needs_varian']);
                 <div class="col-md-2 mb-3">
                     <h5>Menu</h5>
                     <ul class="list-unstyled">
-                        <li><a href="home.php" class="text-white text-decoration-none">Home</a></li>
+                        <li><a href="../home.php" class="text-white text-decoration-none">Home</a></li>
                         <li><a href="../products/product.php" class="text-white text-decoration-none">Produk</a></li>
                         <li><a href="../web/aboutUs.php" class="text-white text-decoration-none">About Us</a></li>
                         <li><a href="../web/blog.php" class="text-white text-decoration-none">Blog</a></li>
@@ -904,7 +921,7 @@ unset($_SESSION['product_id_needs_varian']);
                 <!-- Sosial Media -->
                 <div class="col-md-3 mb-3">
                     <h5>Social Media</h5>
-                    <a href="#" class="text-white me-3"><i class="bi bi-instagram fs-4"></i></a>
+                    <a href="https://www.instagram.com/noorden_parfum?igsh=cGtmcm92aGU0M2k0" class="text-white me-3"><i class="bi bi-instagram fs-4"></i></a>
                     <a href="#" class="text-white me-3"><i class="bi bi-tiktok fs-4"></i></a>
                     <a href="#" class="text-white"><i class="bi bi-facebook fs-4"></i></a>
                 </div>

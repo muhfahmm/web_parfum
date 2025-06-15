@@ -183,7 +183,7 @@ unset($_SESSION['product_id_needs_varian']);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Noorden Parfum - Home</title>
+    <title>Home - Noorden Website</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
@@ -192,6 +192,8 @@ unset($_SESSION['product_id_needs_varian']);
     <link rel="stylesheet" href="./css/sidebar.css">
     <link rel="stylesheet" href="./css/product-home.css">
     <script src="./js/sidebarDropdown.js"></script>
+        <!-- AOS -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 </head>
 
 <body>
@@ -992,7 +994,7 @@ unset($_SESSION['product_id_needs_varian']);
             $result = $conn->query($sql);
 
             if ($result->num_rows > 0) {
-                echo "<h1 class='fw-bold text-center mb-3 product-us'>Produk $category</h1>";
+                echo "<h1 class='fw-bold text-center mb-3 product-us' data-aos='fade-down' data-aos-duration='1500'>Produk $category</h1>";
 
                 // Mulai container carousel
                 echo '<div class="position-relative mb-4">';
@@ -1025,7 +1027,7 @@ unset($_SESSION['product_id_needs_varian']);
                     foreach ($chunk as $row) {
         ?>
                         <div class="col-6 col-sm-6 col-md-3 mb-4">
-                            <div class="card product-card d-flex flex-column rounded h-100 product-us-card"
+                            <div class="card product-card d-flex flex-column rounded h-100 product-us-card" data-aos="fade-up" data-aos-duration="1500"
                                 style="border-radius: 1rem; border: 1px solid #ddd; max-width: 250px; margin: auto;">
 
                                 <a href="./products/detail-product.php?id=<?= $row['id'] ?>" class="product-link">
@@ -1161,7 +1163,7 @@ unset($_SESSION['product_id_needs_varian']);
                 <!-- Sosial Media -->
                 <div class="col-md-3 mb-3">
                     <h5>Social Media</h5>
-                    <a href="#" class="text-white me-3"><i class="bi bi-instagram fs-4"></i></a>
+                    <a href="https://www.instagram.com/noorden_parfum?igsh=cGtmcm92aGU0M2k0" class="text-white me-3"><i class="bi bi-instagram fs-4"></i></a>
                     <a href="#" class="text-white me-3"><i class="bi bi-tiktok fs-4"></i></a>
                     <a href="#" class="text-white"><i class="bi bi-facebook fs-4"></i></a>
                 </div>
@@ -1178,7 +1180,7 @@ unset($_SESSION['product_id_needs_varian']);
         </div>
     </footer>
 
-    <!-- Rest of your HTML remains the same -->
+    <!-- script js navbar & hamburger menu -->
     <script>
         const hamburger = document.getElementById("hamburger");
         const sidebar = document.getElementById("sidebar");
@@ -1385,6 +1387,12 @@ unset($_SESSION['product_id_needs_varian']);
                 }
             });
         });
+    </script>
+
+    <!-- aos -->
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script>
+        AOS.init();
     </script>
 </body>
 

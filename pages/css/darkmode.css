@@ -121,3 +121,8 @@ body {
 .dark .visi-misi-list li {
     color: white;
 }
+
+/* breadcrumb */
+.dark .breadcrumb-item.active {
+    color: white;
+}

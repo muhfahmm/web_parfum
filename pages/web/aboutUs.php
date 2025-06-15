@@ -183,11 +183,11 @@ unset($_SESSION['product_id_needs_varian']);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Makaroni website</title>
+    <title>About Us - Noorden Website</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="icon" href="../img/logo/icon.svg">
+    <link rel="icon" href="../img/logo/icon web.svg">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/sidebar.css">
     <style>
@@ -221,7 +221,7 @@ unset($_SESSION['product_id_needs_varian']);
     </style>
     <script src="../js/sidebarDropdown.js"></script>
 
-     <!-- AOS -->
+    <!-- AOS -->
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 </head>
 
@@ -563,6 +563,16 @@ unset($_SESSION['product_id_needs_varian']);
             <input type="text" class="search-input" placeholder="Cari..." aria-label="Search mobile" />
         </div>
     </nav>
+
+    <!-- breadcrumb -->
+    <div class="container mt-5 pt-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../home.php" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Tentang kami</li>
+            </ol>
+        </nav>
+    </div>
 
     <div class="container mt-5">
         <div class="wrapper mb-5 pb-5">
@@ -1014,9 +1024,7 @@ unset($_SESSION['product_id_needs_varian']);
             <div class="section-left section-title fw-bold" id="visi-label" data-aos="fade-right" data-aos-duration="1500">Visi</div>
             <div class="section-right section-content" role="list" aria-label="Daftar visi">
                 <ol class="section-list visi-misi-list" data-aos="fade-left" data-aos-duration="1500">
-                    <li role="listitem">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Suscipit, a.</li>
-                    <li role="listitem">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Ex, aut!</li>
-                    <li role="listitem">Lorem ipsum dolor, sit amet consectetur adipisicing elit. Velit, maiores.</li>
+                    <li role="listitem">Membuat produk makanan lokal menjadi diminati dan dapat bersaing dipasar lokal hingga global</li>
                 </ol>
             </div>
         </div>
@@ -1024,15 +1032,56 @@ unset($_SESSION['product_id_needs_varian']);
         <!-- Bottom Section -->
         <div class="section section-bottom" aria-labelledby="misi-label">
             <div class="section-left section-content" role="list" aria-label="Daftar misi">
-                <ul class="section-list visi-misi-list" data-aos="fade-right" data-aos-duration="1500">
-                    <li role="listitem">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Perspiciatis, temporibus!</li>
-                    <li role="listitem">Lorem ipsum dolor sit amet consectetur adipisicing elit. Reiciendis, aperiam!</li>
-                    <li role="listitem">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Ab, dolorem!</li>
+                <ul class="section-list visi-misi-list">
+                    <li role="listitem"  data-aos="fade-right" data-aos-duration="2000">Terus melakukan inovasi ke produk</li>
+                    <li role="listitem"  data-aos="fade-right" data-aos-duration="2500">Memperkenalkan kembali produk ke masyarakat dan dunia</li>
+                    <li role="listitem"  data-aos="fade-right" data-aos-duration="3000">Mengikuti tren perkembangan zaman</li>
                 </ul>
             </div>
             <div class="section-right section-title fw-bold" id="misi-label" data-aos="fade-left" data-aos-duration="1500">Misi</div>
         </div>
     </section>
+
+    <!-- footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <!-- Logo -->
+                <div class="col-md-2 offset-md-1 mb-3">
+                    <div class="fw-bold"><img src="../img/logo/logo.svg" height="50px"></div>
+                </div>
+
+                <!-- Menu Navigasi -->
+                <div class="col-md-2 mb-3">
+                    <h5>Menu</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="../home.php" class="text-white text-decoration-none">Home</a></li>
+                        <li><a href="../products/product.php" class="text-white text-decoration-none">Produk</a></li>
+                        <li><a href="../web/aboutUs.php" class="text-white text-decoration-none">About Us</a></li>
+                        <li><a href="../web/blog.php" class="text-white text-decoration-none">Blog</a></li>
+                        <li><a href="../web/contactUs.php" class="text-white text-decoration-none">Contact Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Sosial Media -->
+                <div class="col-md-3 mb-3">
+                    <h5>Social Media</h5>
+                    <a href="https://www.instagram.com/noorden_parfum?igsh=cGtmcm92aGU0M2k0" class="text-white me-3"><i class="bi bi-instagram fs-4"></i></a>
+                    <a href="#" class="text-white me-3"><i class="bi bi-tiktok fs-4"></i></a>
+                    <a href="#" class="text-white"><i class="bi bi-facebook fs-4"></i></a>
+                </div>
+
+                <!-- Marketplace -->
+                <div class="col-md-2 mb-3">
+                    <h5>Marketplace</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white text-decoration-none">Shopee</a></li>
+                        <li><a href="#" class="text-white text-decoration-none">Tokopedia</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="../js/darkmode.js"></script>
 
@@ -1117,7 +1166,7 @@ unset($_SESSION['product_id_needs_varian']);
         });
     </script>
 
-        <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>
         AOS.init();
     </script>

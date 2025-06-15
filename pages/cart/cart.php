@@ -234,7 +234,7 @@ unset($_SESSION['product_id_needs_varian']);
     <div class="sidebar" id="sidebar" aria-label="Sidebar navigation">
         <button class="close-btn" onclick="toggleSidebar()" aria-label="Close sidebar">×</button>
         <ul>
-            <li><a href="../home.php" class="menu-item"></a></li>
+            <li><a href="../home.php" class="menu-item">Home</a></li>
             <li><a href="../web/aboutUs.php" class="menu-item">About Us</a></li>
 
             <li>
@@ -627,49 +627,117 @@ unset($_SESSION['product_id_needs_varian']);
 
     <!-- content -->
     <div class="container">
-        <?php foreach ($cart_items as $item): ?>
-            <a href="../checkout-products/checkoutFromCart.php?id=<?= $item['id'] ?>" class="cart-item-link">
-                <img src="../../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
-                <div class="product-info">
-                    <?= htmlspecialchars($item['nama_produk']) ?>
-                    <?php if (!empty($item['varian'])): ?>
-                        <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
-                    <?php endif; ?>
-                    <div class="quantity-controls">
-                        <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                            <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                            <input type="hidden" name="action" value="decrease">
-                            <button type="submit" name="update_quantity" class="quantity-btn">-</button>
-                        </form>
-                        <span class="quantity-input"><?= $item['jumlah'] ?></span>
-                        <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                            <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                            <input type="hidden" name="action" value="increase">
-                            <button type="submit" name="update_quantity" class="quantity-btn">+</button>
-                        </form>
-                        <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
-                            <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
-                            <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
+        <?php if (!isset($_SESSION['user_id'])): ?>
+            <div class="message-container">
+                <div class="message-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#6c757d" viewBox="0 0 16 16">
+                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+                    </svg>
+                </div>
+                <div class="message-text">
+                    Anda harus login untuk membuka keranjang
+                </div>
+                <a href="../user-controller/login.php" class="btn btn-primary mt-3">Login Sekarang</a>
+            </div>
+        <?php else: ?>
+            <?php if (empty($cart_items)): ?>
+                <div class="message-container">
+                    <div class="message-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#6c757d" viewBox="0 0 16 16">
+                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+                        </svg>
                     </div>
+                    <div class="message-text">
+                        Keranjang Anda kosong
+                    </div>
+                    <a href="../products/index.php" class="btn btn-primary mt-3">Belanja Sekarang</a>
                 </div>
-                <div class="product-price">
-                    <?php if ($item['is_diskon']): ?>
-                        <div class="price-container-navbar">
-                            <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
-                            <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
+            <?php else: ?>
+                <?php foreach ($cart_items as $item): ?>
+                    <a href="../checkout-products/checkoutFromCart.php?id=<?= $item['id'] ?>" class="cart-item-link">
+                        <img src="../../admin/uploads/<?= htmlspecialchars($item['foto_thumbnail'] ?? 'default.jpg') ?>" alt="<?= htmlspecialchars($item['nama_produk']) ?>" />
+                        <div class="product-info">
+                            <?= htmlspecialchars($item['nama_produk']) ?>
+                            <?php if (!empty($item['varian'])): ?>
+                                <small>(<?= htmlspecialchars($item['varian']) ?>)</small>
+                            <?php endif; ?>
+                            <div class="quantity-controls">
+                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                    <input type="hidden" name="action" value="decrease">
+                                    <button type="submit" name="update_quantity" class="quantity-btn">-</button>
+                                </form>
+                                <span class="quantity-input"><?= $item['jumlah'] ?></span>
+                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                    <input type="hidden" name="action" value="increase">
+                                    <button type="submit" name="update_quantity" class="quantity-btn">+</button>
+                                </form>
+                                <form method="POST" action="" class="d-inline" onsubmit="event.stopPropagation();">
+                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                    <button type="submit" name="remove_item" class="remove-btn" title="Hapus">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                    <?php else: ?>
-                        Rp<?= number_format($item['harga'], 0, ',', '.') ?>
-                    <?php endif; ?>
-
-                </div>
-            </a>
-        <?php endforeach; ?>
-        <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
+                        <div class="product-price">
+                            <?php if ($item['is_diskon']): ?>
+                                <div class="price-container-navbar">
+                                    <span class="original-price">Rp<?= number_format($item['harga_asli'], 0, ',', '.') ?></span>
+                                    <span class="discounted-price">Rp<?= number_format($item['harga'], 0, ',', '.') ?></span>
+                                </div>
+                            <?php else: ?>
+                                Rp<?= number_format($item['harga'], 0, ',', '.') ?>
+                            <?php endif; ?>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+                <div class="total-price">Total: Rp<?= number_format($total_price, 0, ',', '.') ?></div>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
+
+    <style>
+        .message-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            margin: 20px 0;
+        }
+
+        .message-icon {
+            margin-bottom: 20px;
+        }
+
+        .message-icon svg {
+            opacity: 0.7;
+        }
+
+        .message-text {
+            font-size: 18px;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            padding: 8px 20px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+    </style>
 
     <!-- Rest of your HTML remains the same -->
     <script>
