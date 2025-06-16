@@ -109,6 +109,9 @@ body {
 }
 
 /* about us */
+.dark .section-title {
+    color: white;
+}
 .dark .about-us {
     color: white;
 }

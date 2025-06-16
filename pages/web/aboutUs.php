@@ -582,9 +582,9 @@ unset($_SESSION['product_id_needs_varian']);
             <div class="about-section">
                 <div>
                     <h2 class="fw-bold about-section-title" data-aos="fade-right" data-aos-duration="2000">Filosofi kami</h2>
-                    <p class="typing-text-filosofi" id="typing-text"></p>
+                    <p class="typing-text-filosofi" id="typing-text" style="font-size: 25px;"></p>
                     <script>
-                        const text = "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Illo inventore eaque provident numquam! Minima, ipsa.";
+                        const text = "Di Noorden, kami percaya bahwa parfum bukan sekadar wewangian—ia adalah ekspresi diri. Remaja adalah masa pencarian jati diri, eksplorasi, dan keberanian untuk tampil beda. Itulah mengapa Noorden hadir untuk menemani setiap langkahmu dalam menemukan identitas melalui aroma yang unik, segar, dan berkarakter.";
                         const target = document.getElementById("typing-text");
 
                         let i = 0;
@@ -689,8 +689,8 @@ unset($_SESSION['product_id_needs_varian']);
                         <a href="#" onclick="toggleDetail(event, this)" class="btn btn-light">Lihat Detail</a>
                     </div>
                     <div class="item-detail">
-                        <h3>Produk Premium</h3>
-                        <p>Hanya bahan terbaik yang kami gunakan untuk menghasilkan produk dengan kualitas premium.</p>
+                        <h3 class="fw-bold">Produk Premium</h3>
+                        <p style="font-family: Arial, Helvetica, sans-serif; font-size: 25px;">Hanya bahan terbaik yang kami gunakan untuk menghasilkan produk dengan kualitas premium.</p>
                     </div>
                 </div>
 
@@ -700,8 +700,8 @@ unset($_SESSION['product_id_needs_varian']);
                         <a href="#" onclick="toggleDetail(event, this)" class="btn btn-light">Lihat Detail</a>
                     </div>
                     <div class="item-detail">
-                        <h3>Harga Terjangkau</h3>
-                        <p>Kami percaya bahwa kualitas terbaik tidak harus mahal. Nikmati produk hebat dengan harga bersahabat.</p>
+                        <h3 class="fw-bold">Harga Terjangkau</h3>
+                        <p style="font-family: Arial, Helvetica, sans-serif; font-size: 25px;">Kami percaya bahwa kualitas terbaik tidak harus mahal. Nikmati produk hebat dengan harga bersahabat.</p>
                     </div>
                 </div>
 
@@ -711,8 +711,8 @@ unset($_SESSION['product_id_needs_varian']);
                         <a href="#" onclick="toggleDetail(event, this)" class="btn btn-light">Lihat Detail</a>
                     </div>
                     <div class="item-detail">
-                        <h3>Aroma Mengesankan</h3>
-                        <p>Kami menyajikan produk dengan aroma yang khas dan menggugah selera, membuat setiap momen lebih istimewa.</p>
+                        <h3 class="fw-bold">Aroma Mengesankan</h3>
+                        <p style="font-family: Arial, Helvetica, sans-serif; font-size: 25px;">Kami menyajikan produk dengan aroma yang khas dan menggugah selera, membuat setiap momen lebih istimewa.</p>
                     </div>
                 </div>
             </div>
@@ -721,6 +721,7 @@ unset($_SESSION['product_id_needs_varian']);
             <button class="nav-btn next" onclick="goNext()">❯</button>
         </div>
         <style>
+
             /* Untuk container penengah */
             .text-center {
                 text-align: center;
