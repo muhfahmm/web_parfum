@@ -266,7 +266,7 @@ unset($_SESSION['product_id_needs_varian']);
             <li>
                 <!-- darkmode -->
                 <link rel="stylesheet" href="../css/darkmode.css">
-                <div class="container">
+                <div class="container" style="cursor: pointer;">
                     <div onclick="darkmode()">
                         <i class="bi bi-moon"></i> darkmode
                     </div>
@@ -650,7 +650,7 @@ unset($_SESSION['product_id_needs_varian']);
                     <div class="message-text">
                         Keranjang Anda kosong
                     </div>
-                    <a href="../products/index.php" class="btn btn-primary mt-3">Belanja Sekarang</a>
+                    <a href="../products/product.php" class="btn btn-primary mt-3">Belanja Sekarang</a>
                 </div>
             <?php else: ?>
                 <?php foreach ($cart_items as $item): ?>

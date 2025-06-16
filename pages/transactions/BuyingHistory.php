@@ -23,6 +23,9 @@ if (!$result) {
 <head>
     <meta charset="UTF-8">
     <title>Riwayat Transaksi</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         table {
             border-collapse: collapse;
@@ -46,7 +49,9 @@ if (!$result) {
 </head>
 <body>
     <h2>Riwayat Transaksi</h2>
-    <table>
+    <div class="container">
+        <div class="wrapper">
+            <table>
         <thead>
             <tr>
                 <th>No</th>
@@ -99,6 +104,8 @@ if (!$result) {
             <?php endif; ?>
         </tbody>
     </table>
+        </div>
+    </div>
     
     <!-- Tambahkan Font Awesome untuk icon placeholder -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
